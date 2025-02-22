@@ -4,7 +4,6 @@ import { ReactNode } from "react";
 import localFont from "next/font/local";
 import Header from "./Header";
 
-// Carrega a fonte local "Varela Round"
 const varelaRound = localFont({
   src: "./fonts/VarelaRound.ttf",
   variable: "--font-varela-round",
@@ -17,10 +16,8 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    // 1) Já incluo "dark" para iniciar em modo escuro no SSR
     <html lang="pt-BR" className={`${varelaRound.variable} dark`}>
       <head>
-        {/* Import do Font Awesome (CDN) */}
         <link
           rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css"
