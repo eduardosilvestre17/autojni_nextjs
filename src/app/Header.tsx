@@ -121,7 +121,7 @@ export default function Header() {
                   href="/contacto"
                   className="hover:text-primary-dark dark:hover:text-primary transition-colors"
                 >
-                  Contato
+                  Contacto
                 </Link>
               </li>
             </ul>
@@ -180,11 +180,11 @@ export default function Header() {
               </li>
               <li>
                 <Link
-                  href="/contato"
+                  href="/contacto"
                   className="block py-1 hover:text-primary-dark dark:hover:text-primary"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Contato
+                  Contacto
                 </Link>
               </li>
               <li className="flex items-center space-x-4 mt-2">

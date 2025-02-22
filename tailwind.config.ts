@@ -12,7 +12,7 @@ const config: Config = {
     extend: {
       colors: {
         // Fundo padrão (modo claro)
-        background: "#f3f4f6",
+        background: "#ffffff",
         // Texto padrão (modo claro)
         foreground: "#111827",
 
