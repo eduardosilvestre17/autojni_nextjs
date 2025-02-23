@@ -2,7 +2,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  darkMode: "class", // Importante para ativar classes "dark"
+  darkMode: "class", // Para usar as variantes "dark:"
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -11,22 +11,23 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Fundo padrão (modo claro)
+        // Cor primária (azul JNI)
+        primary: "#023f86",
+        // Cor secundária (laranja JNI)
+        myOrange: "#f9af22",
+
+        // Variações, se precisar
+        "primary-dark": "#012f63",
+        "myOrange-dark": "#d98f1c",
+
+        // Outros
         background: "#ffffff",
-        // Texto padrão (modo claro)
         foreground: "#111827",
-
-        // Marca principal
-        primary: "#326ce5",
-        "primary-dark": "#2b5ac0",
-        secondary: "#f7b529",
-        "secondary-dark": "#d69620",
-
-        // Modo escuro
         "dark-bg": "#1a1a1a",
         "dark-foreground": "#e5e7eb",
       },
       fontFamily: {
+        // Exemplo de fonte adicional, se precisar
         varela: ["var(--font-varela-round)", "sans-serif"],
       },
     },
