@@ -1,4 +1,3 @@
-// src/app/(public)/layout.tsx
 import "../globals.css";
 import { ReactNode } from "react";
 import localFont from "next/font/local";

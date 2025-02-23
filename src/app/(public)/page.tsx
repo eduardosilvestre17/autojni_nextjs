@@ -1,4 +1,6 @@
-// src/app/(public)/page.tsx
+"use client";
+
+import { PrimaryButton, SecondaryButton } from "@/components/Buttons";
 
 export default function HomePage() {
   return (
@@ -18,9 +20,9 @@ export default function HomePage() {
             Seu projeto Next.js com Tailwind CSS, construído de forma moderna e
             escalável. Personalize como quiser e crie interfaces incríveis.
           </p>
-          <button className="bg-white text-primary font-semibold px-6 py-2 rounded shadow hover:bg-gray-200 transition">
-            Saiba Mais
-          </button>
+
+          {/* Usando o componente PrimaryButton */}
+          <SecondaryButton>Saiba Mais</SecondaryButton>
         </div>
 
         <div className="md:w-1/2 flex justify-center">

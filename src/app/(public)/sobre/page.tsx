@@ -1,4 +1,3 @@
-// src/app/(public)/sobre/page.tsx
 "use client";
 
 import Image from "next/image";
@@ -7,6 +6,9 @@ import avatar1 from "@/app/images/reviews/1.png";
 import avatar2 from "@/app/images/reviews/2.png";
 import avatar3 from "@/app/images/reviews/3.png";
 import avatar4 from "@/app/images/reviews/4.png";
+
+// Importa os dois botões
+import { PrimaryButton, SecondaryButton } from "@/components/Buttons";
 
 const reviews = [
   {
@@ -55,9 +57,8 @@ export default function SobrePage() {
             João Lourenço Alves, com mais de 30 anos de experiência no ramo
             automóvel.
           </p>
-          <button className="bg-white text-blue-600 font-semibold px-6 py-2 rounded shadow hover:bg-gray-100 transition">
-            Ver Mais
-          </button>
+          {/* Usando o SecondaryButton no "Ver Mais" */}
+          <PrimaryButton>Ver Mais</PrimaryButton>
         </div>
         <div className="md:w-1/2 flex justify-center">
           <Image
@@ -130,9 +131,8 @@ export default function SobrePage() {
           </div>
         </div>
         <div className="mt-6">
-          <button className="bg-blue-600 dark:bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-500 dark:hover:bg-blue-400 transition font-semibold">
-            Conhecer os nossos serviços!
-          </button>
+          {/* Aqui vamos usar um PrimaryButton (azul) */}
+          <PrimaryButton>Conhecer os nossos serviços!</PrimaryButton>
         </div>
       </div>
 
