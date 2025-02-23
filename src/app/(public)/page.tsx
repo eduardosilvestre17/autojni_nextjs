@@ -1,4 +1,4 @@
-// src/app/page.tsx
+// src/app/(public)/page.tsx
 
 export default function HomePage() {
   return (
@@ -10,7 +10,6 @@ export default function HomePage() {
         text-white rounded-lg p-8 mb-8 shadow-lg
       "
       >
-        {/* Texto à esquerda */}
         <div className="md:w-1/2 mb-6 md:mb-0 md:pr-8">
           <h1 className="text-3xl md:text-5xl font-bold mb-4">
             Bem-vindo ao AutoJNI!
@@ -24,7 +23,6 @@ export default function HomePage() {
           </button>
         </div>
 
-        {/* Imagem ou ilustração à direita */}
         <div className="md:w-1/2 flex justify-center">
           <img
             src="/hero-image.png"
@@ -34,7 +32,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Seção de destaques */}
       <div className="grid md:grid-cols-3 gap-6">
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
           <h2 className="text-xl font-semibold mb-2 text-foreground dark:text-dark-foreground">

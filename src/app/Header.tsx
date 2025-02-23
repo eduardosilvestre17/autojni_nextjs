@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 
 export default function Header() {
-  // 1) Começa como escuro por padrão, casando com layout.tsx
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
 
@@ -27,13 +26,13 @@ export default function Header() {
   }
 
   return (
-    <header className="bg-white dark:bg-gray-900 shadow">
+    <header className="bg-white dark:bg-gray-900 shadow relative">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         {/* Área Esquerda (Hamburger + Logo) */}
         <div className="flex items-center space-x-2">
-          {/* Botão Hamburger (mobile) */}
+          {/* Botão Hamburger (sempre visível) */}
           <button
-            className="md:hidden p-2 text-primary dark:text-primary hover:text-primary-dark"
+            className="p-2 text-primary dark:text-primary hover:text-primary-dark"
             onClick={toggleMobileMenu}
             aria-label="Abrir menu"
           >
@@ -61,13 +60,14 @@ export default function Header() {
           </Link>
         </div>
 
-        {/* Barra de busca (desktop) */}
-        <div className="hidden md:flex flex-1 mx-4">
-          <form className="w-full relative">
+        {/* Barra de busca (agora aparece em todas as telas) */}
+        <div className="flex flex-1 justify-center mx-4">
+          <form className="relative w-full max-w-md">
             <input
               type="text"
               placeholder="Pesquisar produtos..."
-              className="w-full border dark:border-gray-700 rounded-full px-4 py-2 focus:outline-none 
+              className="w-full border dark:border-gray-700 
+                         rounded px-4 py-2 focus:outline-none 
                          focus:border-primary dark:focus:border-primary-dark 
                          bg-white dark:bg-gray-800 
                          text-foreground dark:text-dark-foreground"
@@ -96,38 +96,9 @@ export default function Header() {
           </form>
         </div>
 
-        {/* Menu desktop + Ícones */}
-        <div className="hidden md:flex items-center space-x-4">
-          <nav>
-            <ul className="flex space-x-6 font-medium text-foreground dark:text-dark-foreground">
-              <li>
-                <Link
-                  href="/"
-                  className="hover:text-primary-dark dark:hover:text-primary transition-colors"
-                >
-                  Home
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/sobre"
-                  className="hover:text-primary-dark dark:hover:text-primary transition-colors"
-                >
-                  Sobre
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/contacto"
-                  className="hover:text-primary-dark dark:hover:text-primary transition-colors"
-                >
-                  Contacto
-                </Link>
-              </li>
-            </ul>
-          </nav>
-
-          {/* Ícones de coração e carrinho (Font Awesome) */}
+        {/* Ícones (coração, carrinho) + Tema */}
+        <div className="flex items-center space-x-4">
+          {/* Ícones de coração e carrinho */}
           <Link
             href="/favoritos"
             className="p-2 text-foreground dark:text-dark-foreground 
@@ -143,27 +114,76 @@ export default function Header() {
             <i className="fa-solid fa-cart-shopping text-lg"></i>
           </Link>
 
-          {/* Botão de toggle dark */}
-          <button
-            onClick={handleToggleDark}
-            className="ml-4 py-2 px-3 rounded border dark:border-gray-700 text-sm 
-                       text-foreground dark:text-dark-foreground 
-                       hover:bg-gray-200 dark:hover:bg-gray-800 transition"
-          >
-            {isDarkMode ? "Modo Claro" : "Modo Escuro"}
-          </button>
+          {/* Switch para Dark Mode */}
+          <div className="ml-2 flex items-center gap-2">
+            <span className="text-xl">☀️</span>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={isDarkMode}
+                onChange={handleToggleDark}
+              />
+              <div
+                className="w-11 h-6 bg-gray-200 peer-focus:outline-none 
+                           rounded-full peer dark:bg-gray-600 
+                           peer-checked:bg-primary peer-checked:after:translate-x-5 
+                           after:content-[''] after:absolute after:top-[2px] after:left-[2px] 
+                           after:bg-white after:border-gray-300 after:border 
+                           after:rounded-full after:h-5 after:w-5 after:transition-all"
+              />
+            </label>
+            <span className="text-xl">🌙</span>
+          </div>
         </div>
       </div>
 
-      {/* Menu mobile */}
-      {mobileMenuOpen && (
-        <div className="md:hidden bg-white dark:bg-gray-900 border-t dark:border-gray-700">
-          <nav className="px-4 py-2">
-            <ul className="flex flex-col space-y-2 text-foreground dark:text-dark-foreground">
+      {/* Drawer (menu que desliza da esquerda) */}
+      <div
+        className={`fixed inset-0 z-50 flex ${
+          mobileMenuOpen ? "block" : "hidden"
+        }`}
+      >
+        {/* Overlay (fundo escurecido) com animação */}
+        <div
+          className="absolute inset-0 bg-black bg-opacity-50 
+                     transition-opacity duration-300 ease-in-out"
+          style={{
+            opacity: mobileMenuOpen ? 1 : 0,
+          }}
+          onClick={() => setMobileMenuOpen(false)}
+        />
+
+        {/* Conteúdo do drawer com animação */}
+        <div
+          className={`relative bg-white dark:bg-gray-900 w-64 h-full shadow-lg 
+                      transform transition-transform duration-300 ease-in-out
+                      ${
+                        mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+                      }`}
+        >
+          <div className="p-4 flex items-center justify-between border-b dark:border-gray-700">
+            <span className="text-xl font-bold text-primary dark:text-primary">
+              Menu
+            </span>
+            {/* Botão para fechar via "X" */}
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="text-foreground dark:text-dark-foreground 
+                         hover:text-primary-dark dark:hover:text-primary"
+              aria-label="Fechar menu"
+            >
+              <i className="fa-solid fa-xmark text-2xl"></i>
+            </button>
+          </div>
+
+          {/* Links de navegação (apenas dentro do drawer) */}
+          <nav className="p-4">
+            <ul className="flex flex-col space-y-4 font-medium text-foreground dark:text-dark-foreground">
               <li>
                 <Link
                   href="/"
-                  className="block py-1 hover:text-primary-dark dark:hover:text-primary"
+                  className="hover:text-primary-dark dark:hover:text-primary transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Home
@@ -172,7 +192,7 @@ export default function Header() {
               <li>
                 <Link
                   href="/sobre"
-                  className="block py-1 hover:text-primary-dark dark:hover:text-primary"
+                  className="hover:text-primary-dark dark:hover:text-primary transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Sobre
@@ -181,45 +201,16 @@ export default function Header() {
               <li>
                 <Link
                   href="/contacto"
-                  className="block py-1 hover:text-primary-dark dark:hover:text-primary"
+                  className="hover:text-primary-dark dark:hover:text-primary transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Contacto
                 </Link>
               </li>
-              <li className="flex items-center space-x-4 mt-2">
-                <Link
-                  href="/favoritos"
-                  className="text-foreground dark:text-dark-foreground hover:text-red-500 dark:hover:text-red-400"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <i className="fa-solid fa-heart text-lg"></i>
-                </Link>
-                <Link
-                  href="/carrinho"
-                  className="text-foreground dark:text-dark-foreground hover:text-primary-dark dark:hover:text-primary"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <i className="fa-solid fa-cart-shopping text-lg"></i>
-                </Link>
-              </li>
-              {/* Botão modo escuro no menu mobile */}
-              <li>
-                <button
-                  onClick={() => {
-                    handleToggleDark();
-                    setMobileMenuOpen(false);
-                  }}
-                  className="mt-2 py-2 px-3 rounded border dark:border-gray-700 text-sm 
-                             hover:bg-gray-200 dark:hover:bg-gray-800 transition w-full text-left"
-                >
-                  {isDarkMode ? "Modo Claro" : "Modo Escuro"}
-                </button>
-              </li>
             </ul>
           </nav>
         </div>
-      )}
+      </div>
     </header>
   );
 }

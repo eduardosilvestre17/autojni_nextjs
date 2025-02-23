@@ -1,20 +1,20 @@
-// src/app/layout.tsx
-import "./globals.css";
+// src/app/(public)/layout.tsx
+import "../globals.css";
 import { ReactNode } from "react";
 import localFont from "next/font/local";
-import Header from "./Header";
+import Header from "../Header";
 
 const varelaRound = localFont({
-  src: "./fonts/VarelaRound.ttf",
+  src: "../fonts/VarelaRound.ttf",
   variable: "--font-varela-round",
 });
 
 export const metadata = {
   title: "AutoJNI",
-  description: "Projeto com modo claro/escuro",
+  description: "website AutoJNI",
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function PublicLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="pt-BR" className={`${varelaRound.variable} dark`}>
       <head>
@@ -27,6 +27,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         />
       </head>
       <body>
+        {/* Header e Footer aparecem apenas aqui */}
         <Header />
         <main className="container mx-auto px-4 py-8">{children}</main>
         <footer className="border-t border-gray-200 dark:border-gray-600 py-4 mt-8 text-center text-sm">
