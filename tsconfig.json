@@ -1,27 +1,54 @@
 {
   "compilerOptions": {
+    // Define a versão do ECMAScript alvo; ES2017 é o suficiente para Next.js
     "target": "ES2017",
+    // Especifica quais libs do TS estarão disponíveis (DOM, ESNext etc.)
     "lib": ["dom", "dom.iterable", "esnext"],
+    // Permite arquivos .js no projeto (caso tenha algum legacy)
     "allowJs": true,
+    // Pula verificação de bibliotecas, ajudando a evitar conflitos de tipagem
     "skipLibCheck": true,
+    // Ativa modo estrito de tipagem
     "strict": true,
+    // Não gerar arquivos .js na build (Next.js lida com o build)
     "noEmit": true,
+    // Permite import/export com sintaxe ESModule e CommonJS
     "esModuleInterop": true,
+    // Define o sistema de módulos como "esnext" (recomendado para Next.js)
     "module": "esnext",
+    // Modo de resolução de módulos. "bundler" é comum em projetos Next.js 13+
     "moduleResolution": "bundler",
+    // Permite importar JSON
     "resolveJsonModule": true,
+    // Exige que cada arquivo TS seja isolado (importante para Next.js)
     "isolatedModules": true,
+    // Preserva JSX em arquivos .tsx até que o Next.js processe
     "jsx": "preserve",
+    // Habilita build incremental (mais rápido em re-compilações)
     "incremental": true,
+    // Plugins internos do Next.js para melhorar IntelliSense
     "plugins": [
       {
         "name": "next"
       }
     ],
+    // Se você usa "src" como base, pode mapear aliases aqui
     "paths": {
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  // Lista de arquivos e diretórios que o TS deve "incluir"
+  "include": [
+    // Gerado automaticamente pelo Next.js (mantém as definições essenciais do framework)
+    "next-env.d.ts",
+    // Inclui todos os arquivos .ts e .tsx do projeto
+    "**/*.ts",
+    "**/*.tsx",
+    // Tipos gerados dinamicamente pelo Next.js
+    ".next/types/**/*.ts",
+    // Inclua sua pasta de definições customizadas (opcional, se houver)
+    "src/types/**/*.d.ts"
+  ],
+  // Exclui node_modules para não processar dependências externas
   "exclude": ["node_modules"]
 }

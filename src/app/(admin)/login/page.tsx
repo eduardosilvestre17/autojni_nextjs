@@ -5,7 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-// Importe o PrimaryButton (ajuste o path se necessário)
+// Importe aqui o seu botão primário
 import { PrimaryButton } from "@/components/Buttons";
 
 export default function LoginPage() {
@@ -30,6 +30,7 @@ export default function LoginPage() {
     setIsSubmitting(true);
     setErrorMsg(null);
 
+    // Faz a chamada ao NextAuth (credenciais)
     const result = await signIn("credentials", {
       email,
       password,
@@ -38,9 +39,11 @@ export default function LoginPage() {
 
     setIsSubmitting(false);
     if (result?.error) {
+      // Se falhar, mostra o erro
       setErrorMsg(result.error);
     } else {
-      router.push("/(admin)/dashboard");
+      // Se der certo, redireciona para o dashboard
+      router.push("/dashboard");
     }
   }
 
@@ -81,6 +84,7 @@ export default function LoginPage() {
       )}
 
       <form onSubmit={handleLogin} className="space-y-8">
+        {/* Campo E-mail */}
         <div className="relative z-0 w-full group">
           <input
             type="email"
@@ -114,6 +118,7 @@ export default function LoginPage() {
           </label>
         </div>
 
+        {/* Campo Senha */}
         <div className="relative z-0 w-full group">
           <input
             type="password"

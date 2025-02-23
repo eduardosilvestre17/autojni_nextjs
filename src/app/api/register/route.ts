@@ -1,3 +1,7 @@
+/* ficheiro para criar utilizadores, apenas remover comentário quando se for criar um,
+voltar a colocar comentario apos isso!
+
+
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 // Ajuste o caminho do prisma conforme sua estrutura
