@@ -18,9 +18,46 @@ model User {
 }
 
 model Product {
-  id          Int    @id @default(autoincrement())
-  name        String
-  description String?
-  price       Float
-  createdAt   DateTime @default(now())
+  id                     String   @id @default(uuid())
+  titulo                 String
+  referencia             String
+  tipoProduto            String?
+  descricaoCurta         String?
+  descricaoCompleta      String?
+  peso                   Decimal? @db.Decimal(10, 2)
+  hasMedidas             Boolean  @default(false)
+  medidas                String?
+  stock                  Int      @default(0)
+  vendasExtraStock       Boolean  @default(false)
+  unidade                String?
+  taxaImposto            Decimal? @db.Decimal(5, 2)
+  qtdMinima              Int      @default(0)
+  produtoFragil          Boolean  @default(false)
+  permitirUpload         Boolean  @default(false)
+  produtoGPSR            Boolean  @default(false)
+  estado                 String?  // "novo", "usado", "recondicionado"
+  destaque               Boolean  @default(false)
+  novidade               Boolean  @default(false)
+  categorias             String?
+  marcas                 String?
+  etiquetas              String?
+  codigoBarras           String?
+  precoCompraSemIva      Decimal? @db.Decimal(10, 2)
+  precoCompraComIva      Decimal? @db.Decimal(10, 2)
+  precoVendaSemIva       Decimal? @db.Decimal(10, 2)
+  precoVendaComIva       Decimal? @db.Decimal(10, 2)
+  margemLucro            Decimal? @db.Decimal(10, 2) // base custo em %
+  margemRelacional       Decimal? @db.Decimal(10, 2) // base venda em %
+  precoPrincipal         Decimal? @db.Decimal(10, 2)
+  precoPromocional       Decimal? @db.Decimal(10, 2)
+  usarPrecosVariacoes    Boolean  @default(false)
+  variacoes              String?  // pode guardar JSON em texto
+  paginaUrl              String?  // "automatico", "personalizado", "link"
+  urlPersonalizada       String?
+  tituloPagina           String?
+  descricaoPagina        String?
+  metatagsPagina         String?
+  especificacoes         String?
+  imagens                String[] // nomes/URLs no banco
+  createdAt              DateTime @default(now())
 }
