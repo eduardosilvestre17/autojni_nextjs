@@ -1,86 +1,69 @@
-// src/app/(public)/loja/page.tsx
-"use client";
-
-import { useState } from "react";
+import { prisma } from "@/lib/prisma";
 
 interface Product {
   id: number;
-  name: string;
-  price: number;
-  image: string;
+  titulo: string;
+  precoPrincipal: any; // Pode ser um Decimal do Prisma
+  imagens: string[];
 }
 
-export default function LojaPage() {
-  // Exemplo de dados estáticos
-  const [products] = useState<Product[]>([
-    {
-      id: 1,
-      name: "Produto A",
-      price: 99.9,
-      image: "/images/produtoA.jpg",
+export default async function LojaPage() {
+  // Busca os produtos do banco de dados
+  const products: Product[] = await prisma.product.findMany({
+    select: {
+      id: true,
+      titulo: true,
+      precoPrincipal: true,
+      imagens: true,
     },
-    {
-      id: 2,
-      name: "Produto B",
-      price: 149.0,
-      image: "/images/produtoB.jpg",
-    },
-    {
-      id: 3,
-      name: "Produto C",
-      price: 59.9,
-      image: "/images/produtoC.jpg",
-    },
-    {
-      id: 4,
-      name: "Produto D",
-      price: 199.0,
-      image: "/images/produtoD.jpg",
-    },
-    // Adicione quantos desejar...
-  ]);
+  });
 
   return (
     <section>
-      {/* Título da seção na página */}
       <h1 className="text-2xl font-bold mb-6 text-foreground dark:text-dark-foreground">
         Loja
       </h1>
 
-      {/* Grid de Produtos */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {products.map((product) => (
-          <div
-            key={product.id}
-            className="bg-white dark:bg-gray-800 rounded shadow p-4 flex flex-col"
-          >
-            {/* Imagem do produto (ajuste src se tiver imagens) */}
-            <img
-              src={product.image}
-              alt={product.name}
-              className="w-full h-48 object-cover rounded mb-4"
-            />
+        {products.map((product) => {
+          // Usa a primeira imagem se existir; caso contrário, usa um placeholder
+          const imageSrc =
+            product.imagens && product.imagens.length > 0
+              ? product.imagens[0]
+              : "/images/placeholder.jpg";
 
-            {/* Nome */}
-            <h2 className="text-lg font-semibold text-foreground dark:text-dark-foreground mb-2">
-              {product.name}
-            </h2>
+          // Converte o preço para número, caso seja um Decimal
+          const price = Number(product.precoPrincipal);
 
-            {/* Preço */}
-            <p className="text-primary dark:text-myOrange text-xl font-bold mb-4">
-              {`€ ${product.price.toFixed(2)}`}
-            </p>
-
-            {/* Botão de adicionar ao carrinho */}
-            <button
-              className="bg-primary dark:bg-myOrange text-white py-2 rounded 
-                         hover:bg-primary-dark dark:hover:bg-myOrange-dark 
-                         transition-colors"
+          return (
+            <div
+              key={product.id}
+              className="bg-white dark:bg-gray-800 rounded shadow p-4 flex flex-col"
             >
-              Adicionar ao Carrinho
-            </button>
-          </div>
-        ))}
+              <img
+                src={imageSrc}
+                alt={product.titulo}
+                className="w-full h-48 object-cover rounded mb-4"
+              />
+
+              <h2 className="text-lg font-semibold text-foreground dark:text-dark-foreground mb-2">
+                {product.titulo}
+              </h2>
+
+              <p className="text-primary dark:text-myOrange text-xl font-bold mb-4">
+                {`€ ${price.toFixed(2)}`}
+              </p>
+
+              <button
+                className="bg-primary dark:bg-myOrange text-white py-2 rounded 
+                           hover:bg-primary-dark dark:hover:bg-myOrange-dark 
+                           transition-colors"
+              >
+                Adicionar ao Carrinho
+              </button>
+            </div>
+          );
+        })}
       </div>
     </section>
   );

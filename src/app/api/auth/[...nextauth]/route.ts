@@ -5,14 +5,22 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
 const handler = NextAuth({
+  // Secret para encriptação dos tokens (deve estar definida em .env)
   secret: process.env.NEXTAUTH_SECRET,
+
+  // Adapter para conectar com o Prisma
   adapter: PrismaAdapter(prisma),
 
+  // Provedores de autenticação
   providers: [
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        email: {
+          label: "Email",
+          type: "email",
+          placeholder: "email@exemplo.com",
+        },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
@@ -21,17 +29,19 @@ const handler = NextAuth({
         }
         const { email, password } = credentials;
 
+        // Procura o usuário pelo email
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user) {
           throw new Error("Usuário não encontrado.");
         }
 
+        // Verifica se a senha está correta
         const validPass = await bcrypt.compare(password, user.password);
         if (!validPass) {
           throw new Error("Senha incorreta.");
         }
 
-        // Convertendo o ID para string, caso ele seja inteiro no banco:
+        // Retorna os dados do usuário (garantindo que o id seja uma string)
         return {
           id: user.id.toString(),
           email: user.email,
@@ -40,45 +50,41 @@ const handler = NextAuth({
     }),
   ],
 
+  // Configuração de sessão utilizando JWT
   session: {
     strategy: "jwt",
   },
 
+  // Configuração do JWT (você pode adicionar opções, se necessário)
   jwt: {
-    // Sem maxAge => não gera expiração fixa
+    // Exemplo: maxAge: 30 * 24 * 60 * 60, // 30 dias
   },
 
   /**
-   * 4) Sobrescrevemos os cookies para remover qualquer 'expires'
-   *    ou 'maxAge'. Isso faz com que o cookie seja de sessão.
-   *    No momento em que o usuário fecha o navegador, o cookie some.
+   * Sobrescrevemos os cookies para remover propriedades de expiração,
+   * fazendo com que o cookie seja apenas de sessão.
    */
   cookies: {
     sessionToken: {
       name: "next-auth.session-token",
       options: {
-        // NUNCA colocar expires ou maxAge aqui
         httpOnly: true,
         sameSite: "lax",
         path: "/",
         secure: process.env.NODE_ENV === "production",
       },
     },
-    // Se quiser sobrescrever também callbackUrl, csrfToken, etc., faça igual
-    // callbackUrl: { ... },
-    // csrfToken: { ... },
   },
 
+  // Callbacks para incluir informações customizadas no token e na sessão
   callbacks: {
     async jwt({ token, user }) {
-      // Passa o user.id para o token na primeira vez.
       if (user) {
         token.id = user.id;
       }
       return token;
     },
     async session({ session, token }) {
-      // Garantindo que session.user.id seja igual ao token.id
       if (token && session.user) {
         session.user.id = token.id as string;
       }
@@ -86,7 +92,9 @@ const handler = NextAuth({
     },
   },
 
+  // Ativa logs detalhados em desenvolvimento
   debug: process.env.NODE_ENV === "development",
 });
 
+// Exporta o handler para os métodos GET e POST
 export { handler as GET, handler as POST };
