@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { PrimaryButton, SecondaryButton } from "@/components/Buttons";
-// Importe o seu SearchInput (já modificado para aceitar value, onChange, etc.)
 import { SearchInput } from "@/components/SearchInput";
+import { TextAreaInput } from "@/components/TextAreaInput";
+import { SelectInput } from "@/components/SelectInput"; // <-- seu componente de dropdown personalizado
 
 // Tabs possíveis
 type ActiveTab =
@@ -17,6 +18,7 @@ type ActiveTab =
   | "seo"
   | "especificacoes";
 
+// Interface para imagens
 interface ImageData {
   file: File;
   previewUrl: string;
@@ -47,19 +49,24 @@ export default function ProdutoPage() {
 
   // Outras Infos
   const [peso, setPeso] = useState("");
-  const [hasMedidas, setHasMedidas] = useState(false);
-  const [medidas, setMedidas] = useState("");
+  const [medidas, setMedidas] = useState(""); // Substitui o "hasMedidas" por um campo simples de medidas
   const [stock, setStock] = useState("");
-  const [vendasExtraStock, setVendasExtraStock] = useState(false);
+  const [qtdMinima, setQtdMinima] = useState("");
   const [unidade, setUnidade] = useState("");
   const [taxaImposto, setTaxaImposto] = useState("23");
-  const [qtdMinima, setQtdMinima] = useState("");
+
+  // Checkboxes
+  const [vendasExtraStock, setVendasExtraStock] = useState(false);
   const [produtoFragil, setProdutoFragil] = useState(false);
   const [permitirUpload, setPermitirUpload] = useState(false);
   const [produtoGPSR, setProdutoGPSR] = useState(false);
-  const [estado, setEstado] = useState("novo");
   const [destaque, setDestaque] = useState(false);
   const [novidade, setNovidade] = useState(false);
+
+  // Dropdown Estado
+  const [estado, setEstado] = useState("novo");
+
+  // Outros campos
   const [categorias, setCategorias] = useState("");
   const [marcas, setMarcas] = useState("");
   const [etiquetas, setEtiquetas] = useState("");
@@ -224,24 +231,24 @@ export default function ProdutoPage() {
     setTipoProduto("");
     setDescricaoCurta("");
     setDescricaoCompleta("");
-    setPeso("0");
-    setHasMedidas(false);
+    setPeso("");
     setMedidas("");
     setStock("");
-    setVendasExtraStock(false);
+    setQtdMinima("");
     setUnidade("");
     setTaxaImposto("23");
-    setQtdMinima("");
+    setVendasExtraStock(false);
     setProdutoFragil(false);
     setPermitirUpload(false);
     setProdutoGPSR(false);
-    setEstado("novo");
     setDestaque(false);
     setNovidade(false);
+    setEstado("novo");
     setCategorias("");
     setMarcas("");
     setEtiquetas("");
     setCodigoBarras("");
+
     setPrecoCompraSemIva("");
     setPrecoCompraComIva("");
     setPrecoVendaSemIva("");
@@ -250,16 +257,19 @@ export default function ProdutoPage() {
     setMargemRelacional("");
     setPrecoPrincipal("");
     setPrecoPromocional("");
+
     setImagensData([]);
     setUploadedImageUrls([]);
     setUsarPrecosVariacoes(false);
     setVariacoes("");
+
     setPaginaUrl("automatico");
     setUrlPersonalizada("");
     setTituloPagina("");
     setDescricaoPagina("");
     setMetatagsPagina("");
     setEspecificacoes("");
+
     setErro("");
     setFieldErrors([]);
     setActiveTab("detalhes");
@@ -271,7 +281,7 @@ export default function ProdutoPage() {
     setErro("");
     setFieldErrors([]);
 
-    // Verifica campos obrigatórios (exemplos: detalhes e preços)
+    // Verifica campos obrigatórios
     const missingFields: string[] = [];
     const missingTabs: string[] = [];
 
@@ -285,6 +295,15 @@ export default function ProdutoPage() {
     if (detalhesFields.length > 0) {
       missingTabs.push("Detalhes");
       missingFields.push(...detalhesFields);
+    }
+
+    // Aba "Outras informações" -> Peso é obrigatório
+    const outrasFields: string[] = [];
+    if (!peso.trim()) outrasFields.push("peso");
+
+    if (outrasFields.length > 0) {
+      missingTabs.push("Outras informações");
+      missingFields.push(...outrasFields);
     }
 
     // Aba "Preços" (exigido: precoPrincipal)
@@ -307,7 +326,7 @@ export default function ProdutoPage() {
     setLoading(true);
 
     try {
-      // 1) Upload das imagens para /api/uploads
+      // 1) Upload das imagens
       let imageUrls: string[] = [];
       if (imagensData.length > 0) {
         const imagesForm = new FormData();
@@ -328,7 +347,7 @@ export default function ProdutoPage() {
         setUploadedImageUrls(imageUrls);
       }
 
-      // 2) Enviar dados do produto para /api/products
+      // 2) Enviar dados do produto
       const productData = {
         titulo,
         referencia,
@@ -336,19 +355,18 @@ export default function ProdutoPage() {
         descricaoCurta,
         descricaoCompleta,
         peso,
-        hasMedidas,
         medidas,
         stock,
-        vendasExtraStock,
+        qtdMinima,
         unidade,
         taxaImposto,
-        qtdMinima,
+        vendasExtraStock,
         produtoFragil,
         permitirUpload,
         produtoGPSR,
-        estado,
         destaque,
         novidade,
+        estado,
         categorias,
         marcas,
         etiquetas,
@@ -407,7 +425,14 @@ export default function ProdutoPage() {
   }
 
   // --- Renderização das ABAs
-  // Nota: agora usamos SearchInput para inputs do tipo "text" e "number".
+
+  // Opções para o Dropdown "Estado"
+  const estadoOptions = [
+    { label: "Novo", value: "novo" },
+    { label: "Usado", value: "usado" },
+    { label: "Recondicionado", value: "recondicionado" },
+  ];
+
   function renderAbaDetalhes() {
     return (
       <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
@@ -454,16 +479,13 @@ export default function ProdutoPage() {
           <label className="font-medium block mb-1">
             Descrição curta <span className="text-red-500">*</span>
           </label>
-          {/* Para o campo maior, podemos manter o textarea ou criar outro componente.
-              Aqui, mantemos o textarea como está. */}
-          <textarea
-            className={`w-full p-2 border rounded ${
-              fieldErrors.includes("descricaoCurta") ? "border-red-500" : ""
-            }`}
-            rows={2}
+          <TextAreaInput
+            placeholder="Descrição curta do produto..."
             value={descricaoCurta}
-            onChange={(e) => setDescricaoCurta(e.target.value)}
+            onChange={setDescricaoCurta}
+            rows={2}
             required
+            isError={fieldErrors.includes("descricaoCurta")}
           />
         </div>
         <div>
@@ -471,12 +493,11 @@ export default function ProdutoPage() {
             Caso pretenda dar uma descrição mais completa ao seu produto,
             preencha abaixo:
           </p>
-          <textarea
-            className="w-full p-2 border rounded mt-2"
-            rows={4}
+          <TextAreaInput
             placeholder="Descrição completa do produto..."
             value={descricaoCompleta}
-            onChange={(e) => setDescricaoCompleta(e.target.value)}
+            onChange={setDescricaoCompleta}
+            rows={4}
           />
         </div>
       </div>
@@ -486,13 +507,13 @@ export default function ProdutoPage() {
   function renderAbaOutras() {
     return (
       <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
-        <div className="flex gap-4">
-          <div className="flex-1">
+        {/* Linhas de Campos */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
             <label className="font-medium block mb-1">
               Peso <span className="text-red-500">*</span>
             </label>
             <div className="flex items-center">
-              {/* Campo numérico */}
               <SearchInput
                 type="number"
                 placeholder="0"
@@ -500,31 +521,24 @@ export default function ProdutoPage() {
                 value={peso}
                 onChange={setPeso}
                 required
+                isError={fieldErrors.includes("peso")}
               />
               <span className="ml-2">kg</span>
             </div>
           </div>
-          <div className="flex-1">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={hasMedidas}
-                onChange={() => setHasMedidas(!hasMedidas)}
-              />
-              Adicionar medidas
-            </label>
-            {hasMedidas && (
-              <SearchInput
-                placeholder="Ex: 10x20x30 cm"
-                withIcon={false}
-                value={medidas}
-                onChange={setMedidas}
-              />
-            )}
+          <div>
+            <label className="font-medium block mb-1">Medidas</label>
+            <SearchInput
+              placeholder="Ex: 10x20x30 cm"
+              withIcon={false}
+              value={medidas}
+              onChange={setMedidas}
+            />
           </div>
         </div>
-        <div className="flex gap-4">
-          <div className="flex-1">
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
             <label className="font-medium block mb-1">Stock</label>
             <SearchInput
               type="number"
@@ -534,37 +548,7 @@ export default function ProdutoPage() {
               onChange={setStock}
             />
           </div>
-          <div className="flex-1 flex items-center mt-6 gap-2">
-            <input
-              type="checkbox"
-              checked={vendasExtraStock}
-              onChange={() => setVendasExtraStock(!vendasExtraStock)}
-            />
-            <label>Vendas extra stock</label>
-          </div>
-        </div>
-        <div className="flex gap-4">
-          <div className="flex-1">
-            <label className="font-medium block mb-1">Unidade</label>
-            <SearchInput
-              placeholder="Ex: un, pc, cx..."
-              withIcon={false}
-              value={unidade}
-              onChange={setUnidade}
-            />
-          </div>
-          <div className="flex-1">
-            <label className="font-medium block mb-1">Taxa de imposto</label>
-            <SearchInput
-              placeholder="Ex: 23%"
-              withIcon={false}
-              value={taxaImposto}
-              onChange={setTaxaImposto}
-            />
-          </div>
-        </div>
-        <div className="flex gap-4">
-          <div className="flex-1">
+          <div>
             <label className="font-medium block mb-1">Qtd. mínima</label>
             <SearchInput
               type="number"
@@ -574,7 +558,51 @@ export default function ProdutoPage() {
               onChange={setQtdMinima}
             />
           </div>
-          <div className="flex-1 flex items-center gap-2 mt-6">
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="font-medium block mb-1">Unidade</label>
+            <SearchInput
+              placeholder="Ex: un, pc, cx..."
+              withIcon={false}
+              value={unidade}
+              onChange={setUnidade}
+            />
+          </div>
+          <div>
+            <label className="font-medium block mb-1">Taxa de imposto</label>
+            <SearchInput
+              placeholder="Ex: 23%"
+              withIcon={false}
+              value={taxaImposto}
+              onChange={setTaxaImposto}
+            />
+          </div>
+        </div>
+
+        {/* Dropdown de Estado */}
+        <div>
+          <label className="font-medium block mb-1">Estado</label>
+          <SelectInput
+            options={estadoOptions}
+            value={estado}
+            onChange={setEstado}
+            placeholder="Selecione o estado..."
+          />
+        </div>
+
+        {/* Checkboxes (Agrupados no final) */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={vendasExtraStock}
+              onChange={() => setVendasExtraStock(!vendasExtraStock)}
+            />
+            <label>Vendas extra stock</label>
+          </div>
+          <div className="flex items-center gap-2">
             <input
               type="checkbox"
               checked={produtoFragil}
@@ -582,39 +610,23 @@ export default function ProdutoPage() {
             />
             <label>Produto frágil</label>
           </div>
-        </div>
-        <div className="flex gap-4">
-          <div className="flex-1 flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <input
               type="checkbox"
               checked={permitirUpload}
               onChange={() => setPermitirUpload(!permitirUpload)}
             />
-            <label>Permitir upload de ficheiros no carrinho</label>
+            <label>Permitir upload de ficheiros</label>
           </div>
-          <div className="flex-1 flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <input
               type="checkbox"
               checked={produtoGPSR}
               onChange={() => setProdutoGPSR(!produtoGPSR)}
             />
-            <label>Produto abrangido pelo GPSR</label>
+            <label>Produto GPSR</label>
           </div>
-        </div>
-        <div>
-          <label className="block font-medium">Estado</label>
-          <select
-            className="p-2 border rounded w-full mt-1"
-            value={estado}
-            onChange={(e) => setEstado(e.target.value)}
-          >
-            <option value="novo">Novo</option>
-            <option value="usado">Usado</option>
-            <option value="recondicionado">Recondicionado</option>
-          </select>
-        </div>
-        <div className="flex gap-4">
-          <div className="flex-1 flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <input
               type="checkbox"
               checked={destaque}
@@ -622,7 +634,7 @@ export default function ProdutoPage() {
             />
             <label>Destaque</label>
           </div>
-          <div className="flex-1 flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <input
               type="checkbox"
               checked={novidade}
@@ -631,6 +643,8 @@ export default function ProdutoPage() {
             <label>Novidade</label>
           </div>
         </div>
+
+        {/* Campos de Texto diversos */}
         <div>
           <label className="font-medium block mb-1">Categorias</label>
           <SearchInput
@@ -804,7 +818,7 @@ export default function ProdutoPage() {
         <p className="text-sm text-gray-600 dark:text-gray-200">
           A primeira imagem será a principal. Evite arquivos maiores que 6MB.
         </p>
-        {/* Continua como input de arquivos, pois SearchInput não se aplica aqui */}
+        {/* Input de arquivos */}
         <input type="file" multiple onChange={handleImagensChange} />
 
         {imagensData.length > 0 && (
@@ -874,12 +888,11 @@ export default function ProdutoPage() {
           />
           <label>Usar preços nas variações</label>
         </div>
-        <textarea
-          className="w-full p-2 border rounded"
-          rows={4}
+        <TextAreaInput
           placeholder="Ex: { cor: 'Branco', adicional: 5.00 }"
           value={variacoes}
-          onChange={(e) => setVariacoes(e.target.value)}
+          onChange={setVariacoes}
+          rows={4}
         />
       </div>
     );
@@ -942,21 +955,20 @@ export default function ProdutoPage() {
         </div>
         <div>
           <label className="font-medium block mb-1">Descrição da página</label>
-          <textarea
-            className="w-full p-2 border rounded"
-            rows={2}
+          <TextAreaInput
+            placeholder="Descrição da página..."
             value={descricaoPagina}
-            onChange={(e) => setDescricaoPagina(e.target.value)}
+            onChange={setDescricaoPagina}
+            rows={2}
           />
         </div>
         <div>
           <label className="font-medium block mb-1">Metatags da página</label>
-          <textarea
-            className="w-full p-2 border rounded"
-            rows={2}
+          <TextAreaInput
             placeholder="Separe as metatags com ponto e vírgula"
             value={metatagsPagina}
-            onChange={(e) => setMetatagsPagina(e.target.value)}
+            onChange={setMetatagsPagina}
+            rows={2}
           />
         </div>
       </div>
@@ -969,12 +981,11 @@ export default function ProdutoPage() {
         <p className="text-sm text-gray-600 dark:text-gray-200">
           Configure especificações (Memória, Processador, etc.).
         </p>
-        <textarea
-          className="w-full p-2 border rounded"
-          rows={4}
+        <TextAreaInput
           placeholder="Ex: Memória: 16GB RAM; Disco: 512GB SSD; ..."
           value={especificacoes}
-          onChange={(e) => setEspecificacoes(e.target.value)}
+          onChange={setEspecificacoes}
+          rows={4}
         />
       </div>
     );
@@ -982,7 +993,19 @@ export default function ProdutoPage() {
 
   // Render final
   return (
-    <div className="w-full max-w-5xl mx-auto bg-white p-6 rounded shadow dark:bg-gray-800">
+    <div
+      className="
+        container 
+        max-w-5xl 
+        mx-auto 
+        px-4 
+        py-6 
+        bg-white 
+        rounded 
+        shadow 
+        dark:bg-gray-800
+      "
+    >
       <h1 className="text-2xl font-bold mb-4">Produto - Configuração Geral</h1>
       {erro && <p className="text-red-600 mb-2">{erro}</p>}
 
@@ -1065,9 +1088,9 @@ function TabButton({
       className={`pb-2 border-b-2 transition-colors
         ${
           active
-            ? // Aba ativa: borda azul e texto de destaque
+            ? // Aba ativa
               "border-blue-600 font-semibold text-gray-800 dark:text-white"
-            : // Aba inativa: texto mais claro, mas com hover
+            : // Aba inativa
               "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:border-gray-300"
         }`}
     >
