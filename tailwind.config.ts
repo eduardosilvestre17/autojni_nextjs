@@ -1,4 +1,3 @@
-// tailwind.config.ts
 import type { Config } from "tailwindcss";
 
 const config: Config = {
@@ -11,20 +10,22 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Cor primária (azul JNI)
+        // Cores principais
         primary: "#023f86",
-        // Cor secundária (laranja JNI)
         myOrange: "#f9af22",
-
-        // Variações, se precisar
         "primary-dark": "#012f63",
         "myOrange-dark": "#d98f1c",
 
-        // Outros
+        // Cores de fundo e texto
         background: "#ffffff",
         foreground: "#111827",
         "dark-bg": "#1a1a1a",
         "dark-foreground": "#e5e7eb",
+
+        // Exemplo de cores específicas para o input de pesquisa
+        "search-bg": "#ffffff",
+        "search-bg-dark": "#1f2937", // Equivalente ao gray-800
+        "search-border-dark": "#374151", // Equivalente ao gray-700
       },
       fontFamily: {
         // Exemplo de fonte adicional, se precisar

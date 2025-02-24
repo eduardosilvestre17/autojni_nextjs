@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { ThemeSwitch } from "@/components/ThemeSwitch";
+// Importe o componente de pesquisa
+import { SearchInput } from "@/components/SearchInput";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -57,7 +59,7 @@ export default function Header() {
   return (
     <header className="bg-white dark:bg-gray-900 shadow relative">
       <div className="container mx-auto px-4 py-4">
-        {/*
+        {/* 
           Em telas md+, definimos 3 "colunas" manuais:
           1) auto (hambúrguer + logo)
           2) 1fr  (barra de pesquisa)
@@ -110,42 +112,13 @@ export default function Header() {
             </div>
           </div>
 
-          {/* Coluna 2 (Centro): Barra de pesquisa */}
+          {/* Coluna 2 (Centro): Barra de pesquisa (sem lupa) */}
           <div className="flex justify-center w-full">
-            <form className="relative max-w-md w-full">
-              <input
-                type="text"
-                placeholder="Pesquisar produtos..."
-                className="w-full border dark:border-gray-700
-                           rounded px-4 py-2 focus:outline-none
-                           focus:border-primary dark:focus:border-primary-dark 
-                           bg-white dark:bg-gray-800
-                           text-foreground dark:text-dark-foreground"
-              />
-              <button
-                type="submit"
-                aria-label="Pesquisar"
-                className="absolute right-2 top-1/2 -translate-y-1/2
-                           text-foreground dark:text-dark-foreground
-                           hover:text-primary-dark dark:hover:text-primary
-                           transition-colors"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M21 21l-4.35-4.35M9.5 17a7.5 7.5 0 1 1 0-15 
-                       7.5 7.5 0 0 1 0 15z"
-                  />
-                </svg>
-              </button>
-            </form>
+            <SearchInput
+              placeholder="Pesquisar produtos..."
+              withIcon={true}
+              // Se quiser com lupa, mude para withIcon={true}
+            />
           </div>
 
           {/* Coluna 3 (Direita): Ícones + switch (somente md+) */}

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { PrimaryButton, SecondaryButton } from "@/components/Buttons";
+// Importe o seu SearchInput (já modificado para aceitar value, onChange, etc.)
+import { SearchInput } from "@/components/SearchInput";
 
 // Tabs possíveis
 type ActiveTab =
@@ -32,6 +34,7 @@ export default function ProdutoPage() {
 
   // 2) Todos os useState
   const [erro, setErro] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<ActiveTab>("detalhes");
 
@@ -43,7 +46,7 @@ export default function ProdutoPage() {
   const [descricaoCompleta, setDescricaoCompleta] = useState("");
 
   // Outras Infos
-  const [peso, setPeso] = useState("0");
+  const [peso, setPeso] = useState("");
   const [hasMedidas, setHasMedidas] = useState(false);
   const [medidas, setMedidas] = useState("");
   const [stock, setStock] = useState("");
@@ -214,6 +217,7 @@ export default function ProdutoPage() {
     });
   }
 
+  // Reset do Formulário
   function handleNovoProduto() {
     setTitulo("");
     setReferencia("");
@@ -257,30 +261,53 @@ export default function ProdutoPage() {
     setMetatagsPagina("");
     setEspecificacoes("");
     setErro("");
+    setFieldErrors([]);
     setActiveTab("detalhes");
   }
 
-  // Envio do formulário
+  // Validação e envio do formulário
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErro("");
+    setFieldErrors([]);
 
-    // Campos obrigatórios
-    if (
-      !titulo ||
-      !referencia ||
-      !tipoProduto ||
-      !descricaoCurta ||
-      !precoPrincipal
-    ) {
-      setErro("Por favor, preencha todos os campos obrigatórios.");
+    // Verifica campos obrigatórios (exemplos: detalhes e preços)
+    const missingFields: string[] = [];
+    const missingTabs: string[] = [];
+
+    // Aba "Detalhes" (exigidos: titulo, referencia, tipoProduto, descricaoCurta)
+    const detalhesFields: string[] = [];
+    if (!titulo.trim()) detalhesFields.push("titulo");
+    if (!referencia.trim()) detalhesFields.push("referencia");
+    if (!tipoProduto.trim()) detalhesFields.push("tipoProduto");
+    if (!descricaoCurta.trim()) detalhesFields.push("descricaoCurta");
+
+    if (detalhesFields.length > 0) {
+      missingTabs.push("Detalhes");
+      missingFields.push(...detalhesFields);
+    }
+
+    // Aba "Preços" (exigido: precoPrincipal)
+    const precosFields: string[] = [];
+    if (!precoPrincipal.trim()) precosFields.push("precoPrincipal");
+
+    if (precosFields.length > 0) {
+      missingTabs.push("Preços");
+      missingFields.push(...precosFields);
+    }
+
+    if (missingFields.length > 0) {
+      setErro(
+        `Faltam campos obrigatórios nas abas: ${missingTabs.join(", ")}.`
+      );
+      setFieldErrors(missingFields);
       return;
     }
 
     setLoading(true);
 
     try {
-      // 1) Upload das imagens para pages/api/uploads.ts
+      // 1) Upload das imagens para /api/uploads
       let imageUrls: string[] = [];
       if (imagensData.length > 0) {
         const imagesForm = new FormData();
@@ -288,9 +315,6 @@ export default function ProdutoPage() {
           imagesForm.append("images", item.file, item.newName);
         });
 
-        // Fazemos fetch para "/api/uploads" (Pages Router).
-        // A rota /api/uploads foi criada em pages/api/uploads.ts
-        // que usa formidable para salvar em /public/uploads
         const uploadRes = await fetch("/api/uploads", {
           method: "POST",
           body: imagesForm,
@@ -304,8 +328,7 @@ export default function ProdutoPage() {
         setUploadedImageUrls(imageUrls);
       }
 
-      // 2) Enviar dados do produto (com as URLs das imagens) para "/api/products"
-      //    (Pode ser no App Router ou Pages Router, depende de como você implementou).
+      // 2) Enviar dados do produto para /api/products
       const productData = {
         titulo,
         referencia,
@@ -365,8 +388,6 @@ export default function ProdutoPage() {
         }
       }
 
-      // Faz fetch p/ "/api/products"
-      // Se também estiver no Pages Router, seria pages/api/products.ts
       const res = await fetch("/api/products", {
         method: "POST",
         body: formData,
@@ -386,18 +407,20 @@ export default function ProdutoPage() {
   }
 
   // --- Renderização das ABAs
+  // Nota: agora usamos SearchInput para inputs do tipo "text" e "number".
   function renderAbaDetalhes() {
     return (
-      <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded space-y-4">
+      <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
         <div>
           <label className="font-medium block mb-1">
             Título <span className="text-red-500">*</span>
           </label>
-          <input
-            type="text"
-            className="w-full p-2 border rounded"
+          <SearchInput
+            placeholder="Título do produto..."
+            withIcon={false}
             value={titulo}
-            onChange={(e) => setTitulo(e.target.value)}
+            onChange={setTitulo}
+            isError={fieldErrors.includes("titulo")}
             required
           />
         </div>
@@ -405,11 +428,12 @@ export default function ProdutoPage() {
           <label className="font-medium block mb-1">
             Referência <span className="text-red-500">*</span>
           </label>
-          <input
-            type="text"
-            className="w-full p-2 border rounded"
+          <SearchInput
+            placeholder="Referência..."
+            withIcon={false}
             value={referencia}
-            onChange={(e) => setReferencia(e.target.value)}
+            onChange={setReferencia}
+            isError={fieldErrors.includes("referencia")}
             required
           />
         </div>
@@ -417,12 +441,12 @@ export default function ProdutoPage() {
           <label className="font-medium block mb-1">
             Tipo de produto <span className="text-red-500">*</span>
           </label>
-          <input
-            type="text"
-            className="w-full p-2 border rounded"
+          <SearchInput
             placeholder="Ex: Eletrônico, Roupa, etc."
+            withIcon={false}
             value={tipoProduto}
-            onChange={(e) => setTipoProduto(e.target.value)}
+            onChange={setTipoProduto}
+            isError={fieldErrors.includes("tipoProduto")}
             required
           />
         </div>
@@ -430,8 +454,12 @@ export default function ProdutoPage() {
           <label className="font-medium block mb-1">
             Descrição curta <span className="text-red-500">*</span>
           </label>
+          {/* Para o campo maior, podemos manter o textarea ou criar outro componente.
+              Aqui, mantemos o textarea como está. */}
           <textarea
-            className="w-full p-2 border rounded"
+            className={`w-full p-2 border rounded ${
+              fieldErrors.includes("descricaoCurta") ? "border-red-500" : ""
+            }`}
             rows={2}
             value={descricaoCurta}
             onChange={(e) => setDescricaoCurta(e.target.value)}
@@ -457,18 +485,20 @@ export default function ProdutoPage() {
 
   function renderAbaOutras() {
     return (
-      <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded space-y-4">
+      <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
         <div className="flex gap-4">
           <div className="flex-1">
             <label className="font-medium block mb-1">
               Peso <span className="text-red-500">*</span>
             </label>
             <div className="flex items-center">
-              <input
+              {/* Campo numérico */}
+              <SearchInput
                 type="number"
-                className="p-2 border rounded w-32"
+                placeholder="0"
+                withIcon={false}
                 value={peso}
-                onChange={(e) => setPeso(e.target.value)}
+                onChange={setPeso}
                 required
               />
               <span className="ml-2">kg</span>
@@ -484,12 +514,11 @@ export default function ProdutoPage() {
               Adicionar medidas
             </label>
             {hasMedidas && (
-              <input
-                type="text"
+              <SearchInput
                 placeholder="Ex: 10x20x30 cm"
-                className="mt-2 p-2 border rounded w-full"
+                withIcon={false}
                 value={medidas}
-                onChange={(e) => setMedidas(e.target.value)}
+                onChange={setMedidas}
               />
             )}
           </div>
@@ -497,11 +526,12 @@ export default function ProdutoPage() {
         <div className="flex gap-4">
           <div className="flex-1">
             <label className="font-medium block mb-1">Stock</label>
-            <input
+            <SearchInput
               type="number"
-              className="w-full p-2 border rounded"
+              placeholder="0"
+              withIcon={false}
               value={stock}
-              onChange={(e) => setStock(e.target.value)}
+              onChange={setStock}
             />
           </div>
           <div className="flex-1 flex items-center mt-6 gap-2">
@@ -516,33 +546,32 @@ export default function ProdutoPage() {
         <div className="flex gap-4">
           <div className="flex-1">
             <label className="font-medium block mb-1">Unidade</label>
-            <input
-              type="text"
-              className="w-full p-2 border rounded"
+            <SearchInput
               placeholder="Ex: un, pc, cx..."
+              withIcon={false}
               value={unidade}
-              onChange={(e) => setUnidade(e.target.value)}
+              onChange={setUnidade}
             />
           </div>
           <div className="flex-1">
             <label className="font-medium block mb-1">Taxa de imposto</label>
-            <input
-              type="text"
-              className="w-full p-2 border rounded"
+            <SearchInput
               placeholder="Ex: 23%"
+              withIcon={false}
               value={taxaImposto}
-              onChange={(e) => setTaxaImposto(e.target.value)}
+              onChange={setTaxaImposto}
             />
           </div>
         </div>
         <div className="flex gap-4">
           <div className="flex-1">
             <label className="font-medium block mb-1">Qtd. mínima</label>
-            <input
+            <SearchInput
               type="number"
-              className="w-full p-2 border rounded"
+              placeholder="0"
+              withIcon={false}
               value={qtdMinima}
-              onChange={(e) => setQtdMinima(e.target.value)}
+              onChange={setQtdMinima}
             />
           </div>
           <div className="flex-1 flex items-center gap-2 mt-6">
@@ -604,42 +633,38 @@ export default function ProdutoPage() {
         </div>
         <div>
           <label className="font-medium block mb-1">Categorias</label>
-          <input
-            type="text"
-            className="w-full p-2 border rounded"
+          <SearchInput
             placeholder="Adicionar categorias..."
+            withIcon={false}
             value={categorias}
-            onChange={(e) => setCategorias(e.target.value)}
+            onChange={setCategorias}
           />
         </div>
         <div>
           <label className="font-medium block mb-1">Marcas</label>
-          <input
-            type="text"
-            className="w-full p-2 border rounded"
+          <SearchInput
             placeholder="Adicionar marcas..."
+            withIcon={false}
             value={marcas}
-            onChange={(e) => setMarcas(e.target.value)}
+            onChange={setMarcas}
           />
         </div>
         <div>
           <label className="font-medium block mb-1">Etiquetas</label>
-          <input
-            type="text"
-            className="w-full p-2 border rounded"
+          <SearchInput
             placeholder="Adicionar etiquetas..."
+            withIcon={false}
             value={etiquetas}
-            onChange={(e) => setEtiquetas(e.target.value)}
+            onChange={setEtiquetas}
           />
         </div>
         <div>
           <label className="font-medium block mb-1">Código de barras</label>
-          <input
-            type="text"
-            className="w-full p-2 border rounded"
+          <SearchInput
             placeholder="Ex: 1234567890"
+            withIcon={false}
             value={codigoBarras}
-            onChange={(e) => setCodigoBarras(e.target.value)}
+            onChange={setCodigoBarras}
           />
         </div>
       </div>
@@ -648,7 +673,7 @@ export default function ProdutoPage() {
 
   function renderAbaPrecos() {
     return (
-      <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded space-y-4">
+      <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
         <p className="text-sm text-gray-600 dark:text-gray-200">
           Defina os preços sem IVA ou com IVA manualmente. As margens são
           calculadas com base no preço de compra e venda sem IVA.
@@ -658,13 +683,13 @@ export default function ProdutoPage() {
             <label className="block font-medium mb-1">
               Preço de compra (s/ IVA)
             </label>
-            <input
+            <SearchInput
               type="number"
-              step="0.01"
-              className="w-full p-2 border rounded"
+              placeholder="0.00"
+              withIcon={false}
               value={precoCompraSemIva}
-              onChange={(e) => {
-                setPrecoCompraSemIva(e.target.value);
+              onChange={(val) => {
+                setPrecoCompraSemIva(val);
                 setLastChangedCompra("semIva");
               }}
             />
@@ -673,13 +698,13 @@ export default function ProdutoPage() {
             <label className="block font-medium mb-1">
               Preço de compra (c/ IVA)
             </label>
-            <input
+            <SearchInput
               type="number"
-              step="0.01"
-              className="w-full p-2 border rounded"
+              placeholder="0.00"
+              withIcon={false}
               value={precoCompraComIva}
-              onChange={(e) => {
-                setPrecoCompraComIva(e.target.value);
+              onChange={(val) => {
+                setPrecoCompraComIva(val);
                 setLastChangedCompra("comIva");
               }}
             />
@@ -688,13 +713,13 @@ export default function ProdutoPage() {
             <label className="block font-medium mb-1">
               Preço de venda (s/ IVA)
             </label>
-            <input
+            <SearchInput
               type="number"
-              step="0.01"
-              className="w-full p-2 border rounded"
+              placeholder="0.00"
+              withIcon={false}
               value={precoVendaSemIva}
-              onChange={(e) => {
-                setPrecoVendaSemIva(e.target.value);
+              onChange={(val) => {
+                setPrecoVendaSemIva(val);
                 setLastChangedVenda("semIva");
               }}
             />
@@ -703,13 +728,13 @@ export default function ProdutoPage() {
             <label className="block font-medium mb-1">
               Preço de venda (c/ IVA)
             </label>
-            <input
+            <SearchInput
               type="number"
-              step="0.01"
-              className="w-full p-2 border rounded"
+              placeholder="0.00"
+              withIcon={false}
               value={precoVendaComIva}
-              onChange={(e) => {
-                setPrecoVendaComIva(e.target.value);
+              onChange={(val) => {
+                setPrecoVendaComIva(val);
                 setLastChangedVenda("comIva");
               }}
             />
@@ -748,23 +773,24 @@ export default function ProdutoPage() {
             <label className="block font-medium mb-1">
               Preço principal <span className="text-red-500">*</span>
             </label>
-            <input
+            <SearchInput
               type="number"
-              step="0.01"
-              className="w-full p-2 border rounded"
+              placeholder="0.00"
+              withIcon={false}
               value={precoPrincipal}
-              onChange={(e) => setPrecoPrincipal(e.target.value)}
+              onChange={setPrecoPrincipal}
+              isError={fieldErrors.includes("precoPrincipal")}
               required
             />
           </div>
           <div>
             <label className="block font-medium mb-1">Preço promocional</label>
-            <input
+            <SearchInput
               type="number"
-              step="0.01"
-              className="w-full p-2 border rounded"
+              placeholder="0.00"
+              withIcon={false}
               value={precoPromocional}
-              onChange={(e) => setPrecoPromocional(e.target.value)}
+              onChange={setPrecoPromocional}
             />
           </div>
         </div>
@@ -774,10 +800,11 @@ export default function ProdutoPage() {
 
   function renderAbaImagens() {
     return (
-      <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded space-y-4">
+      <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
         <p className="text-sm text-gray-600 dark:text-gray-200">
           A primeira imagem será a principal. Evite arquivos maiores que 6MB.
         </p>
+        {/* Continua como input de arquivos, pois SearchInput não se aplica aqui */}
         <input type="file" multiple onChange={handleImagensChange} />
 
         {imagensData.length > 0 && (
@@ -794,13 +821,11 @@ export default function ProdutoPage() {
                 />
                 <div className="flex-1">
                   <label className="text-sm block mb-1">Nome p/ BD</label>
-                  <input
-                    type="text"
+                  <SearchInput
+                    placeholder="Nome do arquivo..."
+                    withIcon={false}
                     value={item.newName}
-                    onChange={(e) =>
-                      handleImageNameChange(index, e.target.value)
-                    }
-                    className="p-1 border rounded w-full"
+                    onChange={(val) => handleImageNameChange(index, val)}
                   />
                 </div>
                 <button
@@ -837,7 +862,7 @@ export default function ProdutoPage() {
 
   function renderAbaVariacoes() {
     return (
-      <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded space-y-4">
+      <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
         <p className="text-sm text-gray-600 dark:text-gray-200">
           Configure opções extras (cor, tamanho, etc.).
         </p>
@@ -862,7 +887,7 @@ export default function ProdutoPage() {
 
   function renderAbaSeo() {
     return (
-      <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded space-y-4">
+      <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
         <div>
           <label className="font-medium block mb-1">Página URL *</label>
           <div className="flex flex-col gap-2">
@@ -898,22 +923,21 @@ export default function ProdutoPage() {
             </label>
           </div>
           {paginaUrl === "personalizado" && (
-            <input
-              type="text"
+            <SearchInput
               placeholder="/meu-produto-personalizado"
-              className="mt-2 w-full p-2 border rounded"
+              withIcon={false}
               value={urlPersonalizada}
-              onChange={(e) => setUrlPersonalizada(e.target.value)}
+              onChange={setUrlPersonalizada}
             />
           )}
         </div>
         <div>
           <label className="font-medium block mb-1">Título da página</label>
-          <input
-            type="text"
-            className="w-full p-2 border rounded"
+          <SearchInput
+            placeholder="Título da página"
+            withIcon={false}
             value={tituloPagina}
-            onChange={(e) => setTituloPagina(e.target.value)}
+            onChange={setTituloPagina}
           />
         </div>
         <div>
@@ -941,7 +965,7 @@ export default function ProdutoPage() {
 
   function renderAbaEspecificacoes() {
     return (
-      <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded space-y-4">
+      <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
         <p className="text-sm text-gray-600 dark:text-gray-200">
           Configure especificações (Memória, Processador, etc.).
         </p>
@@ -1038,11 +1062,14 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`pb-2 border-b-2 transition-colors ${
-        active
-          ? "border-blue-600 font-semibold"
-          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-      }`}
+      className={`pb-2 border-b-2 transition-colors
+        ${
+          active
+            ? // Aba ativa: borda azul e texto de destaque
+              "border-blue-600 font-semibold text-gray-800 dark:text-white"
+            : // Aba inativa: texto mais claro, mas com hover
+              "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:border-gray-300"
+        }`}
     >
       {label}
     </button>
