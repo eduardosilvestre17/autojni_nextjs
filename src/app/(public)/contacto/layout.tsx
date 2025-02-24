@@ -3,7 +3,7 @@ import { ReactNode } from "react";
 export const metadata = {
   title: "Contacto - Auto JNI",
   description:
-    "Entre em contacto com a equipa da Auto JNI. Veja informações de contacto, morada e horários de funcionamento.",
+    "Entre em contacto com a equipa da AutoJNI. Veja informações de contacto, morada e horários de funcionamento.",
 };
 
 export default function ContactoLayout({ children }: { children: ReactNode }) {

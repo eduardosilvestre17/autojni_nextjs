@@ -1,27 +1,29 @@
+// app/layout.tsx
 import "../globals.css";
 import { ReactNode } from "react";
 import localFont from "next/font/local";
 import Header from "../Header";
+import Footer from "../Footer";
 
-// Ajuste aqui o path, subindo 1 nível para acessar "fonts"
 const varelaRound = localFont({
   src: "../fonts/VarelaRound.ttf",
   variable: "--font-varela-round",
 });
 
 export const metadata = {
-  title: "AutoJNI",
+  title: "Auto JNI",
   description: "website AutoJNI",
 };
 
 export default function PublicLayout({ children }: { children: ReactNode }) {
   return (
-    <div className={varelaRound.variable}>
+    // Classe min-h-screen ocupa altura total da janela;
+    // flex flex-col permite empilhar Header, Main e Footer verticalmente
+    <div className={`${varelaRound.variable} min-h-screen flex flex-col`}>
       <Header />
-      <main className="container mx-auto px-4 py-8">{children}</main>
-      <footer className="border-t border-gray-200 dark:border-gray-600 py-4 mt-8 text-center text-sm">
-        © {new Date().getFullYear()} AutoJNI - Todos os direitos reservados.
-      </footer>
+      {/* flex-1 faz o main expandir e empurrar o Footer para o fim da tela */}
+      <main className="container mx-auto px-4 py-8 flex-1">{children}</main>
+      <Footer />
     </div>
   );
 }

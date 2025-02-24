@@ -16,6 +16,7 @@ export default function Header() {
     <div className="flex items-center gap-4">
       {/* Bloco de ícones */}
       <div className="flex items-center gap-2">
+        {/* Favoritos */}
         <Link
           href="/favoritos"
           className="flex items-center p-2 
@@ -25,6 +26,7 @@ export default function Header() {
         >
           <i className="fa-solid fa-heart" />
         </Link>
+        {/* Carrinho */}
         <Link
           href="/carrinho"
           className="flex items-center p-2
@@ -34,6 +36,7 @@ export default function Header() {
         >
           <i className="fa-solid fa-cart-shopping" />
         </Link>
+        {/* Login */}
         <Link
           href="/login"
           className="inline-flex items-center space-x-2 whitespace-nowrap p-2
@@ -205,6 +208,19 @@ export default function Header() {
                 >
                   <i className="fa-solid fa-house text-lg"></i>
                   <span>Home</span>
+                </Link>
+              </li>
+              {/* Loja Online */}
+              <li>
+                <Link
+                  href="/loja"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2
+                             hover:text-myOrange dark:hover:text-myOrange
+                             transition-colors"
+                >
+                  <i className="fa-solid fa-store text-lg"></i>
+                  <span>Loja Online</span>
                 </Link>
               </li>
               <li>
