@@ -1,4 +1,4 @@
-import "../../globals.css";
+// src/app/(admin)/login/layout.tsx
 import { ReactNode } from "react";
 import localFont from "next/font/local";
 
@@ -13,10 +13,12 @@ export const metadata = {
 
 export default function LoginLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="pt-BR" className={`${varelaRound.variable} dark`}>
-      <body className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 transition-colors">
-        {children}
-      </body>
-    </html>
+    <div
+      className={`
+        ${varelaRound.variable} min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 transition-colors
+      `}
+    >
+      {children}
+    </div>
   );
 }

@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { PrimaryButton, SecondaryButton } from "@/components/Buttons";
 
+// Tabs possíveis
 type ActiveTab =
   | "detalhes"
   | "outras"
@@ -17,7 +18,7 @@ type ActiveTab =
 interface ImageData {
   file: File;
   previewUrl: string;
-  newName: string;
+  newName: string; // Nome que o usuário pode alterar antes de fazer o upload
 }
 
 function parseTaxa(): number {
@@ -25,19 +26,23 @@ function parseTaxa(): number {
 }
 
 export default function ProdutoPage() {
+  // 1) Hooks do Next Auth
+  const { data: session, status } = useSession();
   const router = useRouter();
-  const { status } = useSession();
 
+  // 2) Todos os useState
   const [erro, setErro] = useState("");
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<ActiveTab>("detalhes");
 
+  // Campos do produto
   const [titulo, setTitulo] = useState("");
   const [referencia, setReferencia] = useState("");
   const [tipoProduto, setTipoProduto] = useState("");
   const [descricaoCurta, setDescricaoCurta] = useState("");
   const [descricaoCompleta, setDescricaoCompleta] = useState("");
 
+  // Outras Infos
   const [peso, setPeso] = useState("0");
   const [hasMedidas, setHasMedidas] = useState(false);
   const [medidas, setMedidas] = useState("");
@@ -57,6 +62,7 @@ export default function ProdutoPage() {
   const [etiquetas, setEtiquetas] = useState("");
   const [codigoBarras, setCodigoBarras] = useState("");
 
+  // Preços
   const [precoCompraSemIva, setPrecoCompraSemIva] = useState("");
   const [precoCompraComIva, setPrecoCompraComIva] = useState("");
   const [precoVendaSemIva, setPrecoVendaSemIva] = useState("");
@@ -66,17 +72,25 @@ export default function ProdutoPage() {
   const [precoPrincipal, setPrecoPrincipal] = useState("");
   const [precoPromocional, setPrecoPromocional] = useState("");
 
+  // Imagens
   const [imagensData, setImagensData] = useState<ImageData[]>([]);
+  const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
+
+  // Variações
   const [usarPrecosVariacoes, setUsarPrecosVariacoes] = useState(false);
   const [variacoes, setVariacoes] = useState("");
 
+  // SEO
   const [paginaUrl, setPaginaUrl] = useState("automatico");
   const [urlPersonalizada, setUrlPersonalizada] = useState("");
   const [tituloPagina, setTituloPagina] = useState("");
   const [descricaoPagina, setDescricaoPagina] = useState("");
   const [metatagsPagina, setMetatagsPagina] = useState("");
+
+  // Especificações
   const [especificacoes, setEspecificacoes] = useState("");
 
+  // Preço: qual campo foi alterado por último
   const [lastChangedCompra, setLastChangedCompra] = useState<
     "semIva" | "comIva" | null
   >(null);
@@ -84,6 +98,15 @@ export default function ProdutoPage() {
     "semIva" | "comIva" | null
   >(null);
 
+  // 3) Efeitos
+  // 3a) Se não autenticado, redirecionar
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/login");
+    }
+  }, [status, router]);
+
+  // 3b) Calcular margens
   useEffect(() => {
     const compraSem = parseFloat(precoCompraSemIva) || 0;
     const vendaSem = parseFloat(precoVendaSemIva) || 0;
@@ -103,6 +126,7 @@ export default function ProdutoPage() {
     }
   }, [precoCompraSemIva, precoVendaSemIva]);
 
+  // 3c) Sincroniza compra sem e com IVA
   useEffect(() => {
     if (lastChangedCompra === "semIva") {
       const tax = parseTaxa();
@@ -131,6 +155,7 @@ export default function ProdutoPage() {
     }
   }, [precoCompraSemIva, precoCompraComIva, lastChangedCompra]);
 
+  // 3d) Sincroniza venda sem e com IVA
   useEffect(() => {
     if (lastChangedVenda === "semIva") {
       const tax = parseTaxa();
@@ -159,16 +184,12 @@ export default function ProdutoPage() {
     }
   }, [precoVendaSemIva, precoVendaComIva, lastChangedVenda]);
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.replace("/login");
-    }
-  }, [status, router]);
-
+  // 4) Se ainda estiver carregando a sessão, podemos exibir algo
   if (status === "loading") {
     return <p>Carregando...</p>;
   }
 
+  // Handlers de imagem
   function handleImagensChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.files) {
       const files = Array.from(e.target.files).map((file) => {
@@ -226,6 +247,7 @@ export default function ProdutoPage() {
     setPrecoPrincipal("");
     setPrecoPromocional("");
     setImagensData([]);
+    setUploadedImageUrls([]);
     setUsarPrecosVariacoes(false);
     setVariacoes("");
     setPaginaUrl("automatico");
@@ -238,11 +260,12 @@ export default function ProdutoPage() {
     setActiveTab("detalhes");
   }
 
+  // Envio do formulário
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErro("");
 
-    // Validação manual dos campos obrigatórios
+    // Campos obrigatórios
     if (
       !titulo ||
       !referencia ||
@@ -256,77 +279,109 @@ export default function ProdutoPage() {
 
     setLoading(true);
 
-    const productData = {
-      titulo,
-      referencia,
-      tipoProduto,
-      descricaoCurta,
-      descricaoCompleta,
-      peso,
-      hasMedidas,
-      medidas,
-      stock,
-      vendasExtraStock,
-      unidade,
-      taxaImposto,
-      qtdMinima,
-      produtoFragil,
-      permitirUpload,
-      produtoGPSR,
-      estado,
-      destaque,
-      novidade,
-      categorias,
-      marcas,
-      etiquetas,
-      codigoBarras,
-      precoCompraSemIva,
-      precoCompraComIva,
-      precoVendaSemIva,
-      precoVendaComIva,
-      margemLucro,
-      margemRelacional,
-      precoPrincipal,
-      precoPromocional,
-      usarPrecosVariacoes,
-      variacoes,
-      paginaUrl,
-      urlPersonalizada,
-      tituloPagina,
-      descricaoPagina,
-      metatagsPagina,
-      especificacoes,
-    };
-
-    const formData = new FormData();
-    Object.entries(productData).forEach(([key, value]) => {
-      formData.append(
-        key,
-        typeof value === "boolean" ? (value ? "true" : "false") : value
-      );
-    });
-    imagensData.forEach((item) => {
-      formData.append("images", item.file, item.newName);
-    });
-
     try {
+      // 1) Upload das imagens para pages/api/uploads.ts
+      let imageUrls: string[] = [];
+      if (imagensData.length > 0) {
+        const imagesForm = new FormData();
+        imagensData.forEach((item) => {
+          imagesForm.append("images", item.file, item.newName);
+        });
+
+        // Fazemos fetch para "/api/uploads" (Pages Router).
+        // A rota /api/uploads foi criada em pages/api/uploads.ts
+        // que usa formidable para salvar em /public/uploads
+        const uploadRes = await fetch("/api/uploads", {
+          method: "POST",
+          body: imagesForm,
+        });
+        if (!uploadRes.ok) {
+          const data = await uploadRes.json();
+          throw new Error(data.error || "Erro ao fazer upload das imagens");
+        }
+        const uploadData = await uploadRes.json();
+        imageUrls = uploadData.images || [];
+        setUploadedImageUrls(imageUrls);
+      }
+
+      // 2) Enviar dados do produto (com as URLs das imagens) para "/api/products"
+      //    (Pode ser no App Router ou Pages Router, depende de como você implementou).
+      const productData = {
+        titulo,
+        referencia,
+        tipoProduto,
+        descricaoCurta,
+        descricaoCompleta,
+        peso,
+        hasMedidas,
+        medidas,
+        stock,
+        vendasExtraStock,
+        unidade,
+        taxaImposto,
+        qtdMinima,
+        produtoFragil,
+        permitirUpload,
+        produtoGPSR,
+        estado,
+        destaque,
+        novidade,
+        categorias,
+        marcas,
+        etiquetas,
+        codigoBarras,
+        precoCompraSemIva,
+        precoCompraComIva,
+        precoVendaSemIva,
+        precoVendaComIva,
+        margemLucro,
+        margemRelacional,
+        precoPrincipal,
+        precoPromocional,
+        usarPrecosVariacoes,
+        variacoes,
+        paginaUrl,
+        urlPersonalizada,
+        tituloPagina,
+        descricaoPagina,
+        metatagsPagina,
+        especificacoes,
+        imagens: imageUrls, // array de URLs
+      };
+
+      const formData = new FormData();
+      for (const [key, value] of Object.entries(productData)) {
+        formData.append(
+          key,
+          typeof value === "boolean"
+            ? value
+              ? "true"
+              : "false"
+            : (value as string)
+        );
+      }
+
+      // Faz fetch p/ "/api/products"
+      // Se também estiver no Pages Router, seria pages/api/products.ts
       const res = await fetch("/api/products", {
         method: "POST",
         body: formData,
       });
+
       if (!res.ok) {
         const data = await res.json();
         setErro(data.error || "Erro ao criar produto.");
       } else {
         router.push("/dashboard");
       }
-    } catch {
-      setErro("Falha na requisição.");
+    } catch (error: any) {
+      setErro(error.message || "Falha na requisição.");
     } finally {
       setLoading(false);
     }
   }
 
+  // --- Renderização das ABAs
   function renderAbaDetalhes() {
     return (
       <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded space-y-4">
@@ -720,6 +775,7 @@ export default function ProdutoPage() {
           A primeira imagem será a principal. Evite arquivos maiores que 6MB.
         </p>
         <input type="file" multiple onChange={handleImagensChange} />
+
         {imagensData.length > 0 && (
           <div className="mt-4 space-y-2">
             {imagensData.map((item, index) => (
@@ -752,6 +808,23 @@ export default function ProdutoPage() {
                 </button>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Imagens já enviadas (se existir) */}
+        {uploadedImageUrls.length > 0 && (
+          <div className="mt-4 p-2 bg-gray-50 dark:bg-gray-800 rounded">
+            <h4 className="text-sm font-semibold mb-2">Imagens Salvas:</h4>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+              {uploadedImageUrls.map((url, idx) => (
+                <img
+                  key={idx}
+                  src={url}
+                  alt="uploaded"
+                  className="w-full h-32 object-cover rounded"
+                />
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -879,10 +952,13 @@ export default function ProdutoPage() {
     );
   }
 
+  // Render final
   return (
     <div className="w-full max-w-5xl mx-auto bg-white p-6 rounded shadow dark:bg-gray-800">
       <h1 className="text-2xl font-bold mb-4">Produto - Configuração Geral</h1>
       {erro && <p className="text-red-600 mb-2">{erro}</p>}
+
+      {/* Tabs */}
       <div className="flex space-x-4 mb-6 text-sm">
         <TabButton
           label="Detalhes"
@@ -920,6 +996,8 @@ export default function ProdutoPage() {
           onClick={() => setActiveTab("especificacoes")}
         />
       </div>
+
+      {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
         {activeTab === "detalhes" && renderAbaDetalhes()}
         {activeTab === "outras" && renderAbaOutras()}
@@ -928,6 +1006,7 @@ export default function ProdutoPage() {
         {activeTab === "variacoes" && renderAbaVariacoes()}
         {activeTab === "seo" && renderAbaSeo()}
         {activeTab === "especificacoes" && renderAbaEspecificacoes()}
+
         <div className="flex justify-end space-x-2">
           <SecondaryButton type="button" onClick={handleNovoProduto}>
             Novo Produto
@@ -941,6 +1020,7 @@ export default function ProdutoPage() {
   );
 }
 
+// Componente simples p/ Tabs
 function TabButton({
   label,
   active,

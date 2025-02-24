@@ -7,9 +7,7 @@ export default function HomePage() {
     <section className="mb-8">
       {/* Hero Section */}
       <div
-        className="flex flex-col md:flex-row items-center 
-        bg-gradient-to-r from-primary to-secondary 
-        text-white rounded-lg p-8 mb-8 shadow-lg
+        className="flex flex-col md:flex-row items-center bg-gradient-to-r from-blue-600 to-blue-400 text-white rounded-lg p-8 mb-8 shadow-lg
       "
       >
         <div className="md:w-1/2 mb-6 md:mb-0 md:pr-8">
