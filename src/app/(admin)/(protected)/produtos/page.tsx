@@ -351,14 +351,18 @@ export default function ProdutoPage() {
 
       const formData = new FormData();
       for (const [key, value] of Object.entries(productData)) {
-        formData.append(
-          key,
-          typeof value === "boolean"
-            ? value
-              ? "true"
-              : "false"
-            : (value as string)
-        );
+        if (key === "imagens" && Array.isArray(value)) {
+          formData.append(key, JSON.stringify(value));
+        } else {
+          formData.append(
+            key,
+            typeof value === "boolean"
+              ? value
+                ? "true"
+                : "false"
+              : (value as string)
+          );
+        }
       }
 
       // Faz fetch p/ "/api/products"

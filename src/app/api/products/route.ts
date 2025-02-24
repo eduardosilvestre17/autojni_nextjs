@@ -4,12 +4,15 @@ import { Decimal } from "@prisma/client/runtime/library";
 
 export async function POST(req: Request) {
   try {
+    // Obter e processar o formData
     const formData = await req.formData();
     const data: any = {};
     for (const [key, value] of formData.entries()) {
-      if (key === "images") continue;
       data[key] = value;
     }
+    // Log dos dados recebidos (todos os campos)
+    console.log("Dados do formData:", data);
+
     data.hasMedidas = data.hasMedidas === "true";
     data.vendasExtraStock = data.vendasExtraStock === "true";
     data.produtoFragil = data.produtoFragil === "true";
@@ -26,6 +29,7 @@ export async function POST(req: Request) {
       );
     }
 
+    // Conversão de valores para Decimal
     const pesoDecimal = data.peso ? new Decimal(data.peso) : null;
     const taxaImpostoDecimal = data.taxaImposto
       ? new Decimal(data.taxaImposto)
@@ -55,13 +59,36 @@ export async function POST(req: Request) {
       ? new Decimal(data.precoPromocional)
       : null;
 
-    const imagensFiles = formData
-      .getAll("images")
-      .filter((value): value is File => value instanceof File);
-    const imagensArray = imagensFiles.map((file) =>
-      JSON.stringify({ originalName: file.name, newName: file.name })
-    );
+    // Tratamento do campo "imagens"
+    // Como o formData já contém "imagens" como string JSON, fazemos o parse dela
+    let imagensArray: string[] = [];
+    if (data.imagens) {
+      try {
+        imagensArray = JSON.parse(data.imagens);
+      } catch (e) {
+        console.error("Erro ao fazer parse de data.imagens:", e);
+        imagensArray = [];
+      }
+    }
+    console.log("Array de imagens a ser salvo:", imagensArray);
 
+    // Log final dos dados que serão enviados ao Prisma
+    console.log("Dados finais para criação do produto:", {
+      ...data,
+      peso: pesoDecimal,
+      taxaImposto: taxaImpostoDecimal,
+      precoCompraSemIva: compraNoIvaDecimal,
+      precoCompraComIva: compraIvaDecimal,
+      precoVendaSemIva: vendaNoIvaDecimal,
+      precoVendaComIva: vendaIvaDecimal,
+      margemLucro: margemCustoDecimal,
+      margemRelacional: margemVendaDecimal,
+      precoPrincipal: precoPrincipalDecimal,
+      precoPromocional: precoPromocionalDecimal,
+      imagens: imagensArray,
+    });
+
+    // Criação do produto com Prisma
     const novoProduto = await prisma.product.create({
       data: {
         titulo: data.titulo,
