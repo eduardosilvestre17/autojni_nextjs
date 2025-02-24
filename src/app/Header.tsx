@@ -11,38 +11,42 @@ export default function Header() {
     setMobileMenuOpen((prev) => !prev);
   };
 
-  // Ícones (favoritos, carrinho, login) + ThemeSwitch
+  // Agrupamos ícones e switch em dois "blocos" para aumentar a distância
   const IconsAndTheme = () => (
-    <div className="flex items-center space-x-4">
-      <Link
-        href="/favoritos"
-        className="flex items-center p-2 
-                   text-foreground dark:text-dark-foreground 
-                   hover:text-red-500 dark:hover:text-red-400
-                   transition-colors"
-      >
-        <i className="fa-solid fa-heart text-lg"></i>
-      </Link>
-      <Link
-        href="/carrinho"
-        className="flex items-center p-2
-                   text-foreground dark:text-dark-foreground
-                   hover:text-primary-dark dark:hover:text-primary
-                   transition-colors"
-      >
-        <i className="fa-solid fa-cart-shopping text-lg"></i>
-      </Link>
-      <Link
-        href="/login"
-        className="inline-flex items-center space-x-2 whitespace-nowrap p-2
-                   text-foreground dark:text-dark-foreground
-                   hover:text-primary-dark dark:hover:text-primary 
-                   transition-colors"
-      >
-        <i className="fa-solid fa-user text-lg"></i>
-        <span className="hidden md:inline">Iniciar Sessão</span>
-      </Link>
+    <div className="flex items-center gap-4">
+      {/* Bloco de ícones */}
+      <div className="flex items-center gap-2">
+        <Link
+          href="/favoritos"
+          className="flex items-center p-2 
+                     text-foreground dark:text-dark-foreground 
+                     hover:text-red-500 dark:hover:text-red-400
+                     transition-colors text-lg"
+        >
+          <i className="fa-solid fa-heart" />
+        </Link>
+        <Link
+          href="/carrinho"
+          className="flex items-center p-2
+                     text-foreground dark:text-dark-foreground
+                     hover:text-primary-dark dark:hover:text-primary
+                     transition-colors text-lg"
+        >
+          <i className="fa-solid fa-cart-shopping" />
+        </Link>
+        <Link
+          href="/login"
+          className="inline-flex items-center space-x-2 whitespace-nowrap p-2
+                     text-foreground dark:text-dark-foreground
+                     hover:text-primary-dark dark:hover:text-primary 
+                     transition-colors text-lg"
+        >
+          <i className="fa-solid fa-user" />
+          <span className="hidden md:inline">Iniciar Sessão</span>
+        </Link>
+      </div>
 
+      {/* Switch de tema fica mais afastado dos ícones */}
       <ThemeSwitch />
     </div>
   );
@@ -50,10 +54,15 @@ export default function Header() {
   return (
     <header className="bg-white dark:bg-gray-900 shadow relative">
       <div className="container mx-auto px-4 py-4">
-        {/* Em telas md+: 3 colunas (grid). Em telas menores: flex col. */}
-        <div className="flex flex-col items-center gap-4 md:grid md:grid-cols-3">
+        {/*
+          Em telas md+, definimos 3 "colunas" manuais:
+          1) auto (hambúrguer + logo)
+          2) 1fr  (barra de pesquisa)
+          3) auto (ícones + switch)
+        */}
+        <div className="flex flex-col items-center gap-4 md:grid md:grid-cols-[auto,1fr,auto]">
           {/* Coluna 1 (Esquerda): Hambúrguer + Logo */}
-          <div className="flex items-center justify-between w-full md:w-auto md:col-span-1">
+          <div className="flex items-center justify-between w-full md:w-auto">
             <div className="flex items-center gap-2">
               {/* Botão Hambúrguer */}
               <button
@@ -61,8 +70,8 @@ export default function Header() {
                 aria-label="Abrir menu"
                 className="inline-flex items-center leading-none align-middle
                            text-primary dark:text-white
-                           transition-colors
-                           hover:text-myOrange dark:hover:text-myOrange"
+                           transition-colors hover:text-myOrange 
+                           dark:hover:text-myOrange"
               >
                 <svg
                   className="w-6 h-6 mt-[3px]"
@@ -92,14 +101,14 @@ export default function Header() {
               </Link>
             </div>
 
-            {/* Ícones + tema (apenas no mobile) */}
+            {/* Ícones + Switch (apenas no mobile) */}
             <div className="md:hidden">
               <IconsAndTheme />
             </div>
           </div>
 
           {/* Coluna 2 (Centro): Barra de pesquisa */}
-          <div className="flex justify-center w-full md:col-span-1">
+          <div className="flex justify-center w-full">
             <form className="relative max-w-md w-full">
               <input
                 type="text"
@@ -136,8 +145,8 @@ export default function Header() {
             </form>
           </div>
 
-          {/* Coluna 3 (Direita): Ícones + tema (só em telas md+) */}
-          <div className="hidden md:flex md:col-span-1 justify-end">
+          {/* Coluna 3 (Direita): Ícones + switch (somente md+) */}
+          <div className="hidden md:flex justify-end">
             <IconsAndTheme />
           </div>
         </div>
@@ -163,7 +172,7 @@ export default function Header() {
         {/* Painel lateral */}
         <div
           className={`
-            absolute left-0 top-0 bottom-0 w-64 
+            absolute left-0 top-0 bottom-0 w-64
             bg-white dark:bg-gray-900 shadow-lg
             transform transition-transform duration-300 ease-in-out
             ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}
@@ -176,8 +185,8 @@ export default function Header() {
             <button
               onClick={() => setMobileMenuOpen(false)}
               aria-label="Fechar menu"
-              className="text-foreground dark:text-dark-foreground 
-                         hover:text-primary-dark dark:hover:text-primary 
+              className="text-foreground dark:text-dark-foreground
+                         hover:text-primary-dark dark:hover:text-primary
                          transition-colors"
             >
               <i className="fa-solid fa-xmark text-2xl"></i>
@@ -190,8 +199,8 @@ export default function Header() {
                 <Link
                   href="/"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2 
-                             hover:text-myOrange dark:hover:text-myOrange 
+                  className="flex items-center gap-2
+                             hover:text-myOrange dark:hover:text-myOrange
                              transition-colors"
                 >
                   <i className="fa-solid fa-house text-lg"></i>
@@ -202,8 +211,8 @@ export default function Header() {
                 <Link
                   href="/sobre"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2 
-                             hover:text-myOrange dark:hover:text-myOrange 
+                  className="flex items-center gap-2
+                             hover:text-myOrange dark:hover:text-myOrange
                              transition-colors"
                 >
                   <i className="fa-solid fa-circle-info text-lg"></i>
@@ -214,8 +223,8 @@ export default function Header() {
                 <Link
                   href="/contacto"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2 
-                             hover:text-myOrange dark:hover:text-myOrange 
+                  className="flex items-center gap-2
+                             hover:text-myOrange dark:hover:text-myOrange
                              transition-colors"
                 >
                   <i className="fa-solid fa-envelope text-lg"></i>
