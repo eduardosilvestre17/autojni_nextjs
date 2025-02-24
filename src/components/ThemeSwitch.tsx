@@ -1,24 +1,24 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { FaSun, FaMoon } from "react-icons/fa";
 
 export function ThemeSwitch() {
   const [isDark, setIsDark] = useState<boolean | null>(null);
 
-  // Ao montar no cliente, lê o tema guardado no localStorage
+  // Lê o tema do localStorage ao montar
   useEffect(() => {
     const storedTheme = localStorage.getItem("theme");
     if (storedTheme === "dark") {
       setIsDark(true);
     } else {
-      // Se 'light' ou null/undefined, define como false
       setIsDark(false);
     }
   }, []);
 
-  // Sempre que isDark mudar (e não for null), aplica no <html> e salva em localStorage
+  // Aplica/remove a classe "dark" no <html> e salva no localStorage
   useEffect(() => {
-    if (isDark === null) return; // ainda não carregamos
+    if (isDark === null) return; // Aguarda até sabermos o tema
     const html = document.documentElement;
     if (isDark) {
       html.classList.add("dark");
@@ -29,33 +29,60 @@ export function ThemeSwitch() {
     }
   }, [isDark]);
 
-  // Enquanto não soubermos o valor real, não renderiza o switch
+  // Enquanto não sabemos o tema, não renderiza o switch
   if (isDark === null) {
     return null;
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-xl">☀️</span>
-      <label className="relative inline-flex items-center cursor-pointer">
-        <input
-          type="checkbox"
-          className="sr-only peer"
-          checked={isDark}
-          onChange={() => setIsDark(!isDark)}
-        />
+    <label className="relative inline-flex items-center cursor-pointer">
+      {/* Checkbox invisível, que controla o estado */}
+      <input
+        type="checkbox"
+        className="sr-only peer"
+        checked={isDark}
+        onChange={() => setIsDark(!isDark)}
+      />
+
+      {/* 
+        Switch "fundo": 
+        - w-11 h-6 => tamanho do switch
+        - peer-checked:bg-primary => cor do switch ao "ligar"
+      */}
+      <div
+        className={`
+          w-11 h-6 rounded-full bg-gray-200 
+          peer-focus:outline-none transition-colors
+          dark:bg-gray-600 peer-checked:bg-primary
+          relative
+        `}
+      >
+        {/* 
+          Bolinha interna (slider):
+          - Absoluta, do mesmo tamanho do switch interior (w-5 h-5)
+          - Desloca-se para a direita em modo "checked" (translate-x-5)
+          - flex items-center justify-center => para centralizar o ícone
+        */}
         <div
-          className="
-            w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full
-            peer dark:bg-gray-600 peer-checked:bg-primary
-            peer-checked:after:translate-x-5
-            after:content-[''] after:absolute after:top-[2px] after:left-[2px]
-            after:bg-white after:border-gray-300 after:border
-            after:rounded-full after:h-5 after:w-5 after:transition-all
-          "
-        />
-      </label>
-      <span className="text-xl">🌙</span>
-    </div>
+          className={`
+            absolute top-[2px] left-[2px] 
+            w-5 h-5 rounded-full border border-gray-300 bg-white 
+            transition-all duration-300
+            flex items-center justify-center
+            ${isDark ? "translate-x-5" : ""}
+          `}
+        >
+          {/* 
+            Ícone menor (p. ex. text-[10px]) 
+            Ajuste conforme necessário. 
+          */}
+          {isDark ? (
+            <FaMoon className="text-[10px] text-gray-600" />
+          ) : (
+            <FaSun className="text-[10px] text-yellow-500" />
+          )}
+        </div>
+      </div>
+    </label>
   );
 }

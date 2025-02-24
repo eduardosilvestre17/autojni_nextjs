@@ -11,10 +11,9 @@ export default function Header() {
     setMobileMenuOpen((prev) => !prev);
   };
 
-  // Conjunto de ícones (favoritos, carrinho, login) + o switch de tema
+  // Ícones (favoritos, carrinho, login) + ThemeSwitch
   const IconsAndTheme = () => (
     <div className="flex items-center space-x-4">
-      {/* Ícone de favoritos */}
       <Link
         href="/favoritos"
         className="flex items-center p-2 
@@ -24,8 +23,6 @@ export default function Header() {
       >
         <i className="fa-solid fa-heart text-lg"></i>
       </Link>
-
-      {/* Ícone de carrinho */}
       <Link
         href="/carrinho"
         className="flex items-center p-2
@@ -35,8 +32,6 @@ export default function Header() {
       >
         <i className="fa-solid fa-cart-shopping text-lg"></i>
       </Link>
-
-      {/* Ícone + texto de "Iniciar Sessão" */}
       <Link
         href="/login"
         className="inline-flex items-center space-x-2 whitespace-nowrap p-2
@@ -48,7 +43,6 @@ export default function Header() {
         <span className="hidden md:inline">Iniciar Sessão</span>
       </Link>
 
-      {/* Switch de tema */}
       <ThemeSwitch />
     </div>
   );
@@ -56,30 +50,22 @@ export default function Header() {
   return (
     <header className="bg-white dark:bg-gray-900 shadow relative">
       <div className="container mx-auto px-4 py-4">
-        {/* 
-          Para mobile: flex, empilhando conteúdo em coluna.
-          Para desktop: grid com 3 colunas, cada uma tendo 1/3 do espaço.
-        */}
+        {/* Em telas md+: 3 colunas (grid). Em telas menores: flex col. */}
         <div className="flex flex-col items-center gap-4 md:grid md:grid-cols-3">
-          {/* Coluna 1 (Esquerda): Botão Hamburguer + Logo */}
+          {/* Coluna 1 (Esquerda): Hambúrguer + Logo */}
           <div className="flex items-center justify-between w-full md:w-auto md:col-span-1">
-            <div className="flex items-center">
-              {/* Botão Hamburguer */}
+            <div className="flex items-center gap-2">
+              {/* Botão Hambúrguer */}
               <button
                 onClick={toggleMobileMenu}
                 aria-label="Abrir menu"
-                className="
-                  inline-flex items-center
-                  text-primary
-                  dark:text-white
-                  transition-colors
-                  hover:text-myOrange
-                  dark:hover:text-myOrange
-                  mr-2
-                "
+                className="inline-flex items-center leading-none align-middle
+                           text-primary dark:text-white
+                           transition-colors
+                           hover:text-myOrange dark:hover:text-myOrange"
               >
                 <svg
-                  className="w-6 h-6"
+                  className="w-6 h-6 mt-[3px]"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth={2}
@@ -93,17 +79,14 @@ export default function Header() {
                 </svg>
               </button>
 
-              {/* Texto "AutoJNI" - branco no modo escuro */}
+              {/* Texto "AutoJNI" */}
               <Link
                 href="/"
-                className="
-                  text-2xl font-bold
-                  text-primary
-                  dark:text-white
-                  transition-colors
-                  hover:text-myOrange
-                  dark:hover:text-myOrange
-                "
+                className="inline-flex items-center leading-none align-middle
+                           text-2xl font-bold
+                           text-primary dark:text-white
+                           transition-colors
+                           hover:text-myOrange dark:hover:text-myOrange"
               >
                 AutoJNI
               </Link>
@@ -129,11 +112,11 @@ export default function Header() {
               />
               <button
                 type="submit"
+                aria-label="Pesquisar"
                 className="absolute right-2 top-1/2 -translate-y-1/2
                            text-foreground dark:text-dark-foreground
                            hover:text-primary-dark dark:hover:text-primary
                            transition-colors"
-                aria-label="Pesquisar"
               >
                 <svg
                   className="w-5 h-5"
@@ -153,7 +136,7 @@ export default function Header() {
             </form>
           </div>
 
-          {/* Coluna 3 (Direita): Ícones + tema (só em md+) */}
+          {/* Coluna 3 (Direita): Ícones + tema (só em telas md+) */}
           <div className="hidden md:flex md:col-span-1 justify-end">
             <IconsAndTheme />
           </div>
