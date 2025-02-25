@@ -46,7 +46,6 @@ function NotificationItem({
       handleClose();
     }, 4000);
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handleClose() {
@@ -147,7 +146,6 @@ async function isValidImage(file: File): Promise<boolean> {
   if (hexBytes.startsWith("89504e47")) return true; // PNG
   if (hexBytes.startsWith("ffd8ff")) return true; // JPEG
   if (hexBytes.startsWith("52494646") && hexBytes.length >= 16) {
-    // WEBP
     const webpSubstr = hexBytes.substring(16, 24);
     if (webpSubstr === "57454250") return true;
   }
@@ -167,14 +165,12 @@ export default function ProdutoPage() {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<ActiveTab>("detalhes");
 
-  // Campos gerais
   const [titulo, setTitulo] = useState("");
   const [referencia, setReferencia] = useState("");
   const [tipoProduto, setTipoProduto] = useState("");
   const [descricaoCurta, setDescricaoCurta] = useState("");
   const [descricaoCompleta, setDescricaoCompleta] = useState("");
 
-  // Outras infos
   const [peso, setPeso] = useState("");
   const [medidas, setMedidas] = useState("");
   const [stock, setStock] = useState("");
@@ -193,7 +189,6 @@ export default function ProdutoPage() {
   const [etiquetas, setEtiquetas] = useState("");
   const [codigoBarras, setCodigoBarras] = useState("");
 
-  // Preços
   const [precoCompraSemIva, setPrecoCompraSemIva] = useState("");
   const [precoCompraComIva, setPrecoCompraComIva] = useState("");
   const [precoVendaSemIva, setPrecoVendaSemIva] = useState("");
@@ -210,19 +205,15 @@ export default function ProdutoPage() {
   >(null);
   const [usarPrecosVariacoes, setUsarPrecosVariacoes] = useState(false);
 
-  // Imagens
   const [imagensData, setImagensData] = useState<ImageData[]>([]);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
 
-  // Variações
   const [variacoes, setVariacoes] = useState("");
 
-  // SEO (sem a parte da página URL)
   const [tituloPagina, setTituloPagina] = useState("");
   const [descricaoPagina, setDescricaoPagina] = useState("");
   const [metatagsPagina, setMetatagsPagina] = useState("");
 
-  // Especificações (inicia vazio, sem item aberto)
   const [especificacoesList, setEspecificacoesList] = useState<
     { titulo: string; descricao: string }[]
   >([]);
@@ -233,7 +224,6 @@ export default function ProdutoPage() {
     }
   }, [status, router]);
 
-  // Notificações
   function addNotification(
     type: NotificationType,
     title: string,
@@ -247,18 +237,15 @@ export default function ProdutoPage() {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
   }
 
-  // Calcular margens de lucro
   useEffect(() => {
     const compraSem = parseFloat(precoCompraSemIva) || 0;
     const vendaSem = parseFloat(precoVendaSemIva) || 0;
-
     if (compraSem > 0) {
       const mc = ((vendaSem - compraSem) / compraSem) * 100;
       setMargemLucro(mc.toFixed(2));
     } else {
       setMargemLucro("0");
     }
-
     if (vendaSem > 0) {
       const mr = ((vendaSem - compraSem) / vendaSem) * 100;
       setMargemRelacional(mr.toFixed(2));
@@ -267,7 +254,6 @@ export default function ProdutoPage() {
     }
   }, [precoCompraSemIva, precoVendaSemIva]);
 
-  // Sincroniza compra
   useEffect(() => {
     if (lastChangedCompra === "semIva") {
       const tax = parseTaxa();
@@ -296,7 +282,6 @@ export default function ProdutoPage() {
     }
   }, [precoCompraSemIva, precoCompraComIva, lastChangedCompra]);
 
-  // Sincroniza venda
   useEffect(() => {
     if (lastChangedVenda === "semIva") {
       const tax = parseTaxa();
@@ -329,12 +314,10 @@ export default function ProdutoPage() {
     return <p>Carregando...</p>;
   }
 
-  // Handler de imagens
   async function handleImagensChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (!e.target.files) return;
     const files = Array.from(e.target.files);
     const validImages: ImageData[] = [];
-
     for (const file of files) {
       const ext = file.name.toLowerCase().split(".").pop() || "";
       if (!["png", "jpg", "jpeg", "webp"].includes(ext)) {
@@ -346,7 +329,6 @@ export default function ProdutoPage() {
         e.target.value = "";
         return;
       }
-
       const isImageOk = await isValidImage(file);
       if (!isImageOk) {
         addNotification(
@@ -357,11 +339,9 @@ export default function ProdutoPage() {
         e.target.value = "";
         return;
       }
-
       const baseName =
         file.name.substring(0, file.name.lastIndexOf(".")) || "imagem";
       const previewUrl = URL.createObjectURL(file);
-
       validImages.push({
         file,
         previewUrl,
@@ -369,7 +349,6 @@ export default function ProdutoPage() {
         extension: ext,
       });
     }
-
     if (validImages.length > 0) {
       setImagensData((prev) => [...prev, ...validImages]);
     }
@@ -391,7 +370,6 @@ export default function ProdutoPage() {
     });
   }
 
-  // Especificações
   function handleAddEspecificacao() {
     setEspecificacoesList((prev) => [...prev, { titulo: "", descricao: "" }]);
   }
@@ -410,7 +388,6 @@ export default function ProdutoPage() {
     );
   }
 
-  // Reset formulário
   function handleNovoProduto() {
     setTitulo("");
     setReferencia("");
@@ -434,7 +411,6 @@ export default function ProdutoPage() {
     setMarcas("");
     setEtiquetas("");
     setCodigoBarras("");
-
     setPrecoCompraSemIva("");
     setPrecoCompraComIva("");
     setPrecoVendaSemIva("");
@@ -443,21 +419,16 @@ export default function ProdutoPage() {
     setMargemRelacional("");
     setPrecoPrincipal("");
     setPrecoPromocional("");
-
     setImagensData([]);
     setUploadedImageUrls([]);
     setUsarPrecosVariacoes(false);
     setVariacoes("");
-
     setTituloPagina("");
     setDescricaoPagina("");
     setMetatagsPagina("");
-
     setEspecificacoesList([]);
-
     setFieldErrors([]);
     setActiveTab("detalhes");
-
     addNotification(
       "info",
       "Novo Produto",
@@ -465,15 +436,11 @@ export default function ProdutoPage() {
     );
   }
 
-  // Submit
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFieldErrors([]);
-
     const missingFields: string[] = [];
     const missingTabs: string[] = [];
-
-    // "Detalhes"
     const detalhesFields: string[] = [];
     if (!titulo.trim()) detalhesFields.push("titulo");
     if (!referencia.trim()) detalhesFields.push("referencia");
@@ -483,29 +450,22 @@ export default function ProdutoPage() {
       missingTabs.push("Detalhes");
       missingFields.push(...detalhesFields);
     }
-
-    // "Outras"
     const outrasFields: string[] = [];
     if (!peso.trim()) outrasFields.push("peso");
     if (outrasFields.length > 0) {
       missingTabs.push("Outras informações");
       missingFields.push(...outrasFields);
     }
-
-    // "Preços"
     const precosFields: string[] = [];
     if (!precoPrincipal.trim()) precosFields.push("precoPrincipal");
     if (precosFields.length > 0) {
       missingTabs.push("Preços");
       missingFields.push(...precosFields);
     }
-
-    // "Imagens" - pelo menos 1 imagem
     if (imagensData.length === 0 && uploadedImageUrls.length === 0) {
       missingTabs.push("Imagens");
       missingFields.push("imagens");
     }
-
     if (missingFields.length > 0) {
       const msg = `Faltam campos obrigatórios nas abas: ${missingTabs.join(
         ", "
@@ -514,9 +474,7 @@ export default function ProdutoPage() {
       addNotification("error", "Campos obrigatórios", msg);
       return;
     }
-
     setLoading(true);
-
     try {
       let imageUrls: string[] = [];
       if (imagensData.length > 0) {
@@ -525,20 +483,28 @@ export default function ProdutoPage() {
           const finalName = item.baseName + "." + item.extension;
           imagesForm.append("images", item.file, finalName);
         }
-
         const uploadRes = await fetch("/api/uploads", {
           method: "POST",
           body: imagesForm,
         });
         if (!uploadRes.ok) {
-          const data = await uploadRes.json();
+          let data: any;
+          try {
+            data = await uploadRes.json();
+          } catch {
+            throw new Error("Erro ao fazer upload das imagens");
+          }
           throw new Error(data.error || "Erro ao fazer upload das imagens");
         }
-        const uploadData = await uploadRes.json();
+        let uploadData: any;
+        try {
+          uploadData = await uploadRes.json();
+        } catch {
+          throw new Error("Falha ao interpretar JSON de upload de imagens");
+        }
         imageUrls = uploadData.images || [];
         setUploadedImageUrls(imageUrls);
       }
-
       const productData = {
         titulo,
         referencia,
@@ -575,10 +541,9 @@ export default function ProdutoPage() {
         tituloPagina,
         descricaoPagina,
         metatagsPagina,
-        especificacoes: especificacoesList, // array
+        especificacoes: especificacoesList,
         imagens: imageUrls,
       };
-
       const formData = new FormData();
       for (const [key, value] of Object.entries(productData)) {
         if (key === "imagens" && Array.isArray(value)) {
@@ -596,14 +561,17 @@ export default function ProdutoPage() {
           );
         }
       }
-
       const res = await fetch("/api/products", {
         method: "POST",
         body: formData,
       });
-
       if (!res.ok) {
-        const data = await res.json();
+        let data: any;
+        try {
+          data = await res.json();
+        } catch {
+          throw new Error("Erro ao interpretar JSON ao criar produto");
+        }
         const errMsg = data.error || "Erro ao criar produto.";
         addNotification("error", "Falha", errMsg);
       } else {
@@ -612,8 +580,6 @@ export default function ProdutoPage() {
           "Criar Produto",
           "Produto criado com sucesso."
         );
-
-        // Resetar form
         setTitulo("");
         setReferencia("");
         setTipoProduto("");
@@ -636,7 +602,6 @@ export default function ProdutoPage() {
         setMarcas("");
         setEtiquetas("");
         setCodigoBarras("");
-
         setPrecoCompraSemIva("");
         setPrecoCompraComIva("");
         setPrecoVendaSemIva("");
@@ -645,18 +610,14 @@ export default function ProdutoPage() {
         setMargemRelacional("");
         setPrecoPrincipal("");
         setPrecoPromocional("");
-
         setImagensData([]);
         setUploadedImageUrls([]);
         setUsarPrecosVariacoes(false);
         setVariacoes("");
-
         setTituloPagina("");
         setDescricaoPagina("");
         setMetatagsPagina("");
-
         setEspecificacoesList([]);
-
         setFieldErrors([]);
         setActiveTab("detalhes");
       }
@@ -671,14 +632,12 @@ export default function ProdutoPage() {
     }
   }
 
-  // Opções de estado
   const estadoOptions = [
     { label: "Novo", value: "novo" },
     { label: "Usado", value: "usado" },
     { label: "Recondicionado", value: "recondicionado" },
   ];
 
-  // ABA: Detalhes
   function renderAbaDetalhes() {
     return (
       <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
@@ -750,13 +709,10 @@ export default function ProdutoPage() {
     );
   }
 
-  // ABA: Outras informações
   function renderAbaOutras() {
     return (
       <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
-        {/* Container responsivo com 3 colunas no desktop, 2 no tablet, 1 no mobile */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {/* Peso */}
           <div>
             <label className="font-medium block mb-1">
               Peso (Kg) <span className="text-red-500">*</span>
@@ -771,7 +727,6 @@ export default function ProdutoPage() {
               isError={fieldErrors.includes("peso")}
             />
           </div>
-          {/* Medidas */}
           <div>
             <label className="font-medium block mb-1">Medidas</label>
             <SearchInput
@@ -781,7 +736,6 @@ export default function ProdutoPage() {
               onChange={setMedidas}
             />
           </div>
-          {/* Stock */}
           <div>
             <label className="font-medium block mb-1">Stock</label>
             <SearchInput
@@ -792,7 +746,6 @@ export default function ProdutoPage() {
               onChange={setStock}
             />
           </div>
-          {/* Qtd. mínima */}
           <div>
             <label className="font-medium block mb-1">Qtd. mínima</label>
             <SearchInput
@@ -803,7 +756,6 @@ export default function ProdutoPage() {
               onChange={setQtdMinima}
             />
           </div>
-          {/* Unidade */}
           <div>
             <label className="font-medium block mb-1">Unidade</label>
             <SearchInput
@@ -813,7 +765,6 @@ export default function ProdutoPage() {
               onChange={setUnidade}
             />
           </div>
-          {/* Taxa de imposto */}
           <div>
             <label className="font-medium block mb-1">Taxa de imposto</label>
             <SearchInput
@@ -823,7 +774,6 @@ export default function ProdutoPage() {
               onChange={setTaxaImposto}
             />
           </div>
-          {/* Estado */}
           <div>
             <label className="font-medium block mb-1">Estado</label>
             <SelectInput
@@ -833,7 +783,6 @@ export default function ProdutoPage() {
               placeholder="Selecione o estado..."
             />
           </div>
-          {/* Categorias */}
           <div>
             <label className="font-medium block mb-1">Categorias</label>
             <SearchInput
@@ -843,7 +792,6 @@ export default function ProdutoPage() {
               onChange={setCategorias}
             />
           </div>
-          {/* Marcas */}
           <div>
             <label className="font-medium block mb-1">Marcas</label>
             <SearchInput
@@ -853,7 +801,6 @@ export default function ProdutoPage() {
               onChange={setMarcas}
             />
           </div>
-          {/* Etiquetas */}
           <div>
             <label className="font-medium block mb-1">Etiquetas</label>
             <SearchInput
@@ -863,7 +810,6 @@ export default function ProdutoPage() {
               onChange={setEtiquetas}
             />
           </div>
-          {/* Código de barras */}
           <div>
             <label className="font-medium block mb-1">Código de barras</label>
             <SearchInput
@@ -874,39 +820,32 @@ export default function ProdutoPage() {
             />
           </div>
         </div>
-
-        {/* Checkboxes em layout responsivo também */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
           <CheckboxInput
             label="Vendas extra stock"
             checked={vendasExtraStock}
             onChange={(newValue) => setVendasExtraStock(newValue)}
           />
-
           <CheckboxInput
             label="Produto frágil"
             checked={produtoFragil}
             onChange={(newValue) => setProdutoFragil(newValue)}
           />
-
           <CheckboxInput
             label="Permitir upload de ficheiros"
             checked={permitirUpload}
             onChange={(newValue) => setPermitirUpload(newValue)}
           />
-
           <CheckboxInput
             label="Produto GPSR"
             checked={produtoGPSR}
             onChange={(newValue) => setProdutoGPSR(newValue)}
           />
-
           <CheckboxInput
             label="Destaque"
             checked={destaque}
             onChange={(newValue) => setDestaque(newValue)}
           />
-
           <CheckboxInput
             label="Novidade"
             checked={novidade}
@@ -917,7 +856,6 @@ export default function ProdutoPage() {
     );
   }
 
-  // ABA: Preços
   function renderAbaPrecos() {
     return (
       <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
@@ -1045,7 +983,6 @@ export default function ProdutoPage() {
     );
   }
 
-  // ABA: Imagens
   function renderAbaImagens() {
     return (
       <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
@@ -1054,7 +991,6 @@ export default function ProdutoPage() {
           <br />
           <strong>Formatos permitidos: PNG, JPG, WEBP.</strong>
         </p>
-        {/* Botão customizado para evitar mostrar nome do ficheiro ao lado */}
         <label className="inline-block bg-blue-500 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-600 text-sm">
           Escolher ficheiros
           <input
@@ -1065,8 +1001,6 @@ export default function ProdutoPage() {
             className="hidden"
           />
         </label>
-
-        {/* Lista de pré-visualização das imagens */}
         {imagensData.length > 0 && (
           <div className="mt-4 space-y-2">
             {imagensData.map((item, index) => (
@@ -1074,28 +1008,13 @@ export default function ProdutoPage() {
                 key={index}
                 className="p-2 bg-gray-50 dark:bg-gray-700 rounded"
               >
-                {/*
-                No modo mobile:
-                  - Imagem em cima
-                  - Campo de nome logo abaixo
-                  - E numa nova linha a extensão (.jpeg, webp, etc.) à esquerda,
-                    e o botão "Remover" à direita
-
-                No modo computador (>= sm):
-                  - Tudo numa mesma linha (imagem, nome, extensão e botão),
-                    com o nome ocupando todo o espaço disponível.
-              */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-                  {/* Imagem à esquerda (ou topo no mobile) */}
                   <img
                     src={item.previewUrl}
                     alt="preview"
                     className="w-16 h-16 object-cover rounded mx-auto sm:mx-0"
                   />
-
-                  {/* Envolve nome + extensão + botão */}
                   <div className="flex-1 mt-2 sm:mt-0 w-full flex flex-col sm:flex-row gap-2 items-start sm:items-center">
-                    {/* Campo para nome do arquivo: expande em desktop */}
                     <div className="flex-1 min-w-0">
                       <SearchInput
                         placeholder="Nome do arquivo..."
@@ -1106,19 +1025,10 @@ export default function ProdutoPage() {
                         }
                       />
                     </div>
-
-                    {/*
-                    Em mobile: ocupar linha inteira (w-full),
-                    e usar justify-between para ter extensão à esquerda
-                    e botão "Remover" à direita.
-                    Em desktop (>= sm): w-auto, ficam lado a lado após o campo.
-                  */}
                     <div className="w-full sm:w-auto flex justify-between sm:justify-start gap-2">
-                      {/* Extensão */}
                       <div className="h-10 w-20 flex items-center justify-center bg-gray-200 dark:bg-gray-600 rounded text-sm">
                         .{item.extension}
                       </div>
-                      {/* Botão remover */}
                       <button
                         type="button"
                         className="h-10 px-4 text-sm bg-red-500 text-white rounded hover:bg-red-600 flex items-center justify-center"
@@ -1133,7 +1043,6 @@ export default function ProdutoPage() {
             ))}
           </div>
         )}
-
         {uploadedImageUrls.length > 0 && (
           <div className="mt-4 p-2 bg-gray-50 dark:bg-gray-800 rounded">
             <h4 className="text-sm font-semibold mb-2">Imagens Salvas:</h4>
@@ -1153,7 +1062,6 @@ export default function ProdutoPage() {
     );
   }
 
-  // ABA: Variações
   function renderAbaVariacoes() {
     return (
       <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
@@ -1175,7 +1083,6 @@ export default function ProdutoPage() {
     );
   }
 
-  // ABA: SEO
   function renderAbaSeo() {
     return (
       <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
@@ -1188,7 +1095,6 @@ export default function ProdutoPage() {
             onChange={setTituloPagina}
           />
         </div>
-
         <div>
           <label className="font-medium block mb-1">Descrição da página</label>
           <TextAreaInput
@@ -1198,7 +1104,6 @@ export default function ProdutoPage() {
             rows={2}
           />
         </div>
-
         <div>
           <label className="font-medium block mb-1">Metatags da página</label>
           <TextAreaInput
@@ -1212,14 +1117,12 @@ export default function ProdutoPage() {
     );
   }
 
-  // ABA: Especificações
   function renderAbaEspecificacoes() {
     return (
       <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
         <p className="text-sm text-gray-600 dark:text-gray-200">
           Configure especificações únicas (ex: Memória, Processador, etc.).
         </p>
-
         {especificacoesList.length > 0 &&
           especificacoesList.map((spec, index) => (
             <div
@@ -1257,7 +1160,6 @@ export default function ProdutoPage() {
               </button>
             </div>
           ))}
-
         <button
           type="button"
           onClick={handleAddEspecificacao}
@@ -1269,24 +1171,9 @@ export default function ProdutoPage() {
     );
   }
 
-  // Render principal
   return (
-    <div
-      className="
-        container
-        max-w-5xl
-        mx-auto
-        px-4
-        py-6
-        bg-white
-        rounded
-        shadow
-        dark:bg-gray-800
-      "
-    >
+    <div className="container max-w-5xl mx-auto px-4 py-6 bg-white rounded shadow dark:bg-gray-800">
       <style>{toastAnimationStyle}</style>
-
-      {/* Notificações (toasts) */}
       <div className="fixed top-4 right-4 z-50">
         {notifications.map((notif) => (
           <NotificationItem
@@ -1296,10 +1183,7 @@ export default function ProdutoPage() {
           />
         ))}
       </div>
-
       <h1 className="text-2xl font-bold mb-4">Produto - Configuração Geral</h1>
-
-      {/* Abas responsivas */}
       <div
         className="
           flex
@@ -1351,7 +1235,6 @@ export default function ProdutoPage() {
           onClick={() => setActiveTab("especificacoes")}
         />
       </div>
-
       <form onSubmit={handleSubmit} className="space-y-6">
         {activeTab === "detalhes" && renderAbaDetalhes()}
         {activeTab === "outras" && renderAbaOutras()}
@@ -1360,7 +1243,6 @@ export default function ProdutoPage() {
         {activeTab === "variacoes" && renderAbaVariacoes()}
         {activeTab === "seo" && renderAbaSeo()}
         {activeTab === "especificacoes" && renderAbaEspecificacoes()}
-
         <div className="flex justify-end space-x-2">
           <SecondaryButton type="button" onClick={handleNovoProduto}>
             Novo Produto
@@ -1374,7 +1256,6 @@ export default function ProdutoPage() {
   );
 }
 
-// Botão para trocar de aba
 function TabButton({
   label,
   active,
