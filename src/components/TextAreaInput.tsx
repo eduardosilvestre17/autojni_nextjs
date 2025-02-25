@@ -1,5 +1,5 @@
 "use client";
-import { useState, ChangeEvent } from "react";
+import { useState, ChangeEvent, FocusEvent } from "react";
 
 interface TextAreaInputProps {
   placeholder?: string;
@@ -8,7 +8,7 @@ interface TextAreaInputProps {
   onChange?: (newValue: string) => void;
   isError?: boolean;
   required?: boolean;
-  rows?: number; // Para definir quantas linhas a textarea terá (padrão=4)
+  rows?: number;
 }
 
 export function TextAreaInput({
@@ -20,24 +20,32 @@ export function TextAreaInput({
   required = false,
   rows = 4,
 }: TextAreaInputProps) {
-  // Estado interno apenas para refletir mudanças externas,
-  // caso o componente seja controlado pelo "pai".
   const [textValue, setTextValue] = useState(value);
+  const [localError, setLocalError] = useState(isError);
 
-  // Se a prop "value" mudar externamente, atualizamos o estado interno.
   if (value !== textValue) {
     setTextValue(value);
   }
+  if (isError !== localError) {
+    setLocalError(isError);
+  }
 
-  const handleTextChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+  function handleTextChange(e: ChangeEvent<HTMLTextAreaElement>) {
     setTextValue(e.target.value);
-    if (onChange) {
-      onChange(e.target.value);
-    }
-  };
+    onChange?.(e.target.value);
+  }
+
+  function handleFocus(e: FocusEvent<HTMLTextAreaElement>) {
+    setLocalError(false);
+  }
 
   return (
-    <div className={`relative ${className}`}>
+    <div
+      className={`relative ${className}`}
+      onClick={() => {
+        setLocalError(false);
+      }}
+    >
       <textarea
         placeholder={placeholder}
         className={`
@@ -54,13 +62,14 @@ export function TextAreaInput({
           dark:bg-search-bg-dark
           text-foreground
           dark:text-dark-foreground
-          ${isError ? "!border-red-500" : ""}
-          resize-none  /* Se quiser desabilitar o redimensionamento da textarea */
+          resize-none
+          ${localError ? "!border-red-500" : ""}
         `}
         rows={rows}
         required={required}
         value={textValue}
         onChange={handleTextChange}
+        onFocus={handleFocus}
       />
     </div>
   );

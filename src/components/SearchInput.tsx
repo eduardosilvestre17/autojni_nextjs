@@ -1,11 +1,11 @@
 "use client";
-import { useState, ChangeEvent } from "react";
+import { useState, ChangeEvent, FocusEvent } from "react";
 
 interface SearchInputProps {
   placeholder?: string;
   withIcon?: boolean;
   className?: string;
-  type?: React.HTMLInputTypeAttribute; // "text", "number" etc.
+  type?: React.HTMLInputTypeAttribute;
   value?: string;
   onChange?: (newValue: string) => void;
   isError?: boolean;
@@ -23,25 +23,38 @@ export function SearchInput({
   required = false,
 }: SearchInputProps) {
   const [inputValue, setInputValue] = useState(value);
+  const [localError, setLocalError] = useState(isError);
 
-  // Se a prop "value" mudar externamente, atualiza o estado interno.
   if (value !== inputValue) {
     setInputValue(value);
   }
+  if (isError !== localError) {
+    setLocalError(isError);
+  }
 
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+  function handleInputChange(e: ChangeEvent<HTMLInputElement>) {
     setInputValue(e.target.value);
-    if (onChange) onChange(e.target.value);
-  };
+    onChange?.(e.target.value);
+  }
+
+  function handleFocus(e: FocusEvent<HTMLInputElement>) {
+    setLocalError(false);
+  }
 
   return (
-    <div className={`relative ${className}`}>
+    <div
+      className={`relative ${className}`}
+      onClick={() => {
+        setLocalError(false);
+      }}
+    >
       <input
         type={type}
         placeholder={placeholder}
         required={required}
         value={inputValue}
         onChange={handleInputChange}
+        onFocus={handleFocus}
         className={`
           w-full 
           border 
@@ -56,7 +69,7 @@ export function SearchInput({
           dark:bg-search-bg-dark
           text-foreground 
           dark:text-dark-foreground
-          ${isError ? "!border-red-500" : ""}
+          ${localError ? "!border-red-500" : ""}
         `}
       />
 
@@ -64,10 +77,17 @@ export function SearchInput({
         <button
           type="submit"
           aria-label="Pesquisar"
-          className="absolute right-2 top-1/2 -translate-y-1/2
-                     text-foreground dark:text-dark-foreground
-                     hover:text-primary-dark dark:hover:text-primary
-                     transition-colors"
+          className="
+            absolute 
+            right-2 
+            top-1/2 
+            -translate-y-1/2
+            text-foreground 
+            dark:text-dark-foreground
+            hover:text-primary-dark 
+            dark:hover:text-primary
+            transition-colors
+          "
         >
           <svg
             className="w-5 h-5"
@@ -79,7 +99,7 @@ export function SearchInput({
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
-              d="M21 21l-4.35-4.35M9.5 17a7.5 7.5 0 1 1 0-15 
+              d="M21 21l-4.35-4.35M9.5 17a7.5 7.5 0 1 1 0-15
                  7.5 7.5 0 0 1 0 15z"
             />
           </svg>

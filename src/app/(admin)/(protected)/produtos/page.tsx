@@ -31,6 +31,7 @@ function NotificationItem({
 
   let bgColor = "bg-blue-600";
   let Icon = HiInformationCircle;
+
   if (type === "success") {
     bgColor = "bg-green-600";
     Icon = HiCheckCircle;
@@ -135,14 +136,16 @@ async function isValidImage(file: File): Promise<boolean> {
   const slice = file.slice(0, 12);
   const buffer = await slice.arrayBuffer();
   if (buffer.byteLength < 4) return false;
+
   const arr = new Uint8Array(buffer);
   const hexBytes = Array.from(arr)
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 
-  if (hexBytes.startsWith("89504e47")) return true;
-  if (hexBytes.startsWith("ffd8ff")) return true;
+  if (hexBytes.startsWith("89504e47")) return true; // PNG
+  if (hexBytes.startsWith("ffd8ff")) return true; // JPEG
   if (hexBytes.startsWith("52494646") && hexBytes.length >= 16) {
+    // WEBP
     const webpSubstr = hexBytes.substring(16, 24);
     if (webpSubstr === "57454250") return true;
   }
@@ -155,19 +158,6 @@ function parseTaxa(): number {
 
 export default function ProdutoPage() {
   const [notifications, setNotifications] = useState<INotification[]>([]);
-  function addNotification(
-    type: NotificationType,
-    title: string,
-    message: string
-  ) {
-    const id = Math.random().toString(36).substring(2, 9);
-    const newNotif: INotification = { id, type, title, message };
-    setNotifications((prev) => [...prev, newNotif]);
-  }
-  function removeNotification(id: string) {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-  }
-
   const { data: session, status } = useSession();
   const router = useRouter();
 
@@ -228,15 +218,32 @@ export default function ProdutoPage() {
     }
   }, [status, router]);
 
+  // Notificações
+  function addNotification(
+    type: NotificationType,
+    title: string,
+    message: string
+  ) {
+    const id = Math.random().toString(36).substring(2, 9);
+    const newNotif: INotification = { id, type, title, message };
+    setNotifications((prev) => [...prev, newNotif]);
+  }
+  function removeNotification(id: string) {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  }
+
+  // Calcular margens
   useEffect(() => {
     const compraSem = parseFloat(precoCompraSemIva) || 0;
     const vendaSem = parseFloat(precoVendaSemIva) || 0;
+
     if (compraSem > 0) {
       const mc = ((vendaSem - compraSem) / compraSem) * 100;
       setMargemLucro(mc.toFixed(2));
     } else {
       setMargemLucro("0");
     }
+
     if (vendaSem > 0) {
       const mr = ((vendaSem - compraSem) / vendaSem) * 100;
       setMargemRelacional(mr.toFixed(2));
@@ -245,6 +252,7 @@ export default function ProdutoPage() {
     }
   }, [precoCompraSemIva, precoVendaSemIva]);
 
+  // Sincroniza compra
   useEffect(() => {
     if (lastChangedCompra === "semIva") {
       const tax = parseTaxa();
@@ -273,6 +281,7 @@ export default function ProdutoPage() {
     }
   }, [precoCompraSemIva, precoCompraComIva, lastChangedCompra]);
 
+  // Sincroniza venda
   useEffect(() => {
     if (lastChangedVenda === "semIva") {
       const tax = parseTaxa();
@@ -305,10 +314,12 @@ export default function ProdutoPage() {
     return <p>Carregando...</p>;
   }
 
+  // Handler de imagens
   async function handleImagensChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (!e.target.files) return;
     const files = Array.from(e.target.files);
     const validImages: ImageData[] = [];
+
     for (const file of files) {
       const ext = file.name.toLowerCase().split(".").pop() || "";
       if (!["png", "jpg", "jpeg", "webp"].includes(ext)) {
@@ -320,6 +331,7 @@ export default function ProdutoPage() {
         e.target.value = "";
         return;
       }
+
       const isImageOk = await isValidImage(file);
       if (!isImageOk) {
         addNotification(
@@ -330,11 +342,19 @@ export default function ProdutoPage() {
         e.target.value = "";
         return;
       }
+
       const baseName =
         file.name.substring(0, file.name.lastIndexOf(".")) || "imagem";
       const previewUrl = URL.createObjectURL(file);
-      validImages.push({ file, previewUrl, baseName, extension: ext });
+
+      validImages.push({
+        file,
+        previewUrl,
+        baseName,
+        extension: ext,
+      });
     }
+
     if (validImages.length > 0) {
       setImagensData((prev) => [...prev, ...validImages]);
     }
@@ -379,6 +399,7 @@ export default function ProdutoPage() {
     setMarcas("");
     setEtiquetas("");
     setCodigoBarras("");
+
     setPrecoCompraSemIva("");
     setPrecoCompraComIva("");
     setPrecoVendaSemIva("");
@@ -387,18 +408,23 @@ export default function ProdutoPage() {
     setMargemRelacional("");
     setPrecoPrincipal("");
     setPrecoPromocional("");
+
     setImagensData([]);
     setUploadedImageUrls([]);
     setUsarPrecosVariacoes(false);
     setVariacoes("");
+
     setPaginaUrl("automatico");
     setUrlPersonalizada("");
     setTituloPagina("");
     setDescricaoPagina("");
     setMetatagsPagina("");
     setEspecificacoes("");
+
     setFieldErrors([]);
     setActiveTab("detalhes");
+    // A notificação de "Novo Produto" fica apenas aqui
+    // (se clicarmos no botão "Novo Produto")
     addNotification(
       "info",
       "Novo Produto",
@@ -409,29 +435,39 @@ export default function ProdutoPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFieldErrors([]);
+
     const missingFields: string[] = [];
     const missingTabs: string[] = [];
+
+    // "Detalhes"
     const detalhesFields: string[] = [];
     if (!titulo.trim()) detalhesFields.push("titulo");
     if (!referencia.trim()) detalhesFields.push("referencia");
     if (!tipoProduto.trim()) detalhesFields.push("tipoProduto");
     if (!descricaoCurta.trim()) detalhesFields.push("descricaoCurta");
+
     if (detalhesFields.length > 0) {
       missingTabs.push("Detalhes");
       missingFields.push(...detalhesFields);
     }
+
+    // "Outras"
     const outrasFields: string[] = [];
     if (!peso.trim()) outrasFields.push("peso");
+
     if (outrasFields.length > 0) {
       missingTabs.push("Outras informações");
       missingFields.push(...outrasFields);
     }
+
+    // "Preços"
     const precosFields: string[] = [];
     if (!precoPrincipal.trim()) precosFields.push("precoPrincipal");
     if (precosFields.length > 0) {
       missingTabs.push("Preços");
       missingFields.push(...precosFields);
     }
+
     if (missingFields.length > 0) {
       const msg = `Faltam campos obrigatórios nas abas: ${missingTabs.join(
         ", "
@@ -440,7 +476,9 @@ export default function ProdutoPage() {
       addNotification("error", "Campos obrigatórios", msg);
       return;
     }
+
     setLoading(true);
+
     try {
       let imageUrls: string[] = [];
       if (imagensData.length > 0) {
@@ -449,6 +487,7 @@ export default function ProdutoPage() {
           const finalName = item.baseName + "." + item.extension;
           imagesForm.append("images", item.file, finalName);
         }
+
         const uploadRes = await fetch("/api/uploads", {
           method: "POST",
           body: imagesForm,
@@ -461,6 +500,7 @@ export default function ProdutoPage() {
         imageUrls = uploadData.images || [];
         setUploadedImageUrls(imageUrls);
       }
+
       const productData = {
         titulo,
         referencia,
@@ -502,6 +542,7 @@ export default function ProdutoPage() {
         especificacoes,
         imagens: imageUrls,
       };
+
       const formData = new FormData();
       for (const [key, value] of Object.entries(productData)) {
         if (key === "imagens" && Array.isArray(value)) {
@@ -517,21 +558,71 @@ export default function ProdutoPage() {
           );
         }
       }
+
       const res = await fetch("/api/products", {
         method: "POST",
         body: formData,
       });
+
       if (!res.ok) {
         const data = await res.json();
         const errMsg = data.error || "Erro ao criar produto.";
         addNotification("error", "Falha", errMsg);
       } else {
+        // Produto criado com sucesso
         addNotification(
           "success",
           "Criar Produto",
           "Produto criado com sucesso."
         );
-        router.push("/dashboard");
+        // Em vez de ir para dashboard, resetamos (sem notificar "Novo Produto")
+        // copiando a lógica do handleNovoProduto mas sem notificação
+        setTitulo("");
+        setReferencia("");
+        setTipoProduto("");
+        setDescricaoCurta("");
+        setDescricaoCompleta("");
+        setPeso("");
+        setMedidas("");
+        setStock("");
+        setQtdMinima("");
+        setUnidade("");
+        setTaxaImposto("23");
+        setVendasExtraStock(false);
+        setProdutoFragil(false);
+        setPermitirUpload(false);
+        setProdutoGPSR(false);
+        setDestaque(false);
+        setNovidade(false);
+        setEstado("novo");
+        setCategorias("");
+        setMarcas("");
+        setEtiquetas("");
+        setCodigoBarras("");
+
+        setPrecoCompraSemIva("");
+        setPrecoCompraComIva("");
+        setPrecoVendaSemIva("");
+        setPrecoVendaComIva("");
+        setMargemLucro("");
+        setMargemRelacional("");
+        setPrecoPrincipal("");
+        setPrecoPromocional("");
+
+        setImagensData([]);
+        setUploadedImageUrls([]);
+        setUsarPrecosVariacoes(false);
+        setVariacoes("");
+
+        setPaginaUrl("automatico");
+        setUrlPersonalizada("");
+        setTituloPagina("");
+        setDescricaoPagina("");
+        setMetatagsPagina("");
+        setEspecificacoes("");
+
+        setFieldErrors([]);
+        setActiveTab("detalhes");
       }
     } catch (error: any) {
       addNotification(
@@ -939,17 +1030,14 @@ export default function ProdutoPage() {
             {imagensData.map((item, index) => (
               <div
                 key={index}
-                className="flex items-end gap-3 p-2 bg-gray-50 dark:bg-gray-700 rounded"
+                className="flex w-full items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700 rounded"
               >
                 <img
                   src={item.previewUrl}
                   alt="preview"
                   className="w-16 h-16 object-cover rounded"
                 />
-                <div>
-                  <label className="text-sm block mb-1">
-                    Nome (sem extensão)
-                  </label>
+                <div className="flex-1">
                   <SearchInput
                     placeholder="Nome do arquivo..."
                     withIcon={false}
@@ -957,11 +1045,8 @@ export default function ProdutoPage() {
                     onChange={(val) => handleImageBaseNameChange(index, val)}
                   />
                 </div>
-                <div>
-                  <label className="text-sm block mb-1">Extensão</label>
-                  <div className="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-sm">
-                    .{item.extension}
-                  </div>
+                <div className="h-10 w-20 flex items-center justify-center bg-gray-200 dark:bg-gray-600 rounded text-sm">
+                  .{item.extension}
                 </div>
                 <button
                   type="button"
@@ -1125,6 +1210,7 @@ export default function ProdutoPage() {
       "
     >
       <style>{toastAnimationStyle}</style>
+
       <div className="fixed top-4 right-4 z-50">
         {notifications.map((notif) => (
           <NotificationItem
@@ -1134,7 +1220,9 @@ export default function ProdutoPage() {
           />
         ))}
       </div>
+
       <h1 className="text-2xl font-bold mb-4">Produto - Configuração Geral</h1>
+
       <div className="flex space-x-4 mb-6 text-sm">
         <TabButton
           label="Detalhes"
@@ -1172,6 +1260,7 @@ export default function ProdutoPage() {
           onClick={() => setActiveTab("especificacoes")}
         />
       </div>
+
       <form onSubmit={handleSubmit} className="space-y-6">
         {activeTab === "detalhes" && renderAbaDetalhes()}
         {activeTab === "outras" && renderAbaOutras()}
@@ -1180,6 +1269,7 @@ export default function ProdutoPage() {
         {activeTab === "variacoes" && renderAbaVariacoes()}
         {activeTab === "seo" && renderAbaSeo()}
         {activeTab === "especificacoes" && renderAbaEspecificacoes()}
+
         <div className="flex justify-end space-x-2">
           <SecondaryButton type="button" onClick={handleNovoProduto}>
             Novo Produto
