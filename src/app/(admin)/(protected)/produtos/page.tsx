@@ -45,6 +45,7 @@ function NotificationItem({
       handleClose();
     }, 4000);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handleClose() {
@@ -165,11 +166,14 @@ export default function ProdutoPage() {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<ActiveTab>("detalhes");
 
+  // Campos gerais
   const [titulo, setTitulo] = useState("");
   const [referencia, setReferencia] = useState("");
   const [tipoProduto, setTipoProduto] = useState("");
   const [descricaoCurta, setDescricaoCurta] = useState("");
   const [descricaoCompleta, setDescricaoCompleta] = useState("");
+
+  // Outras infos
   const [peso, setPeso] = useState("");
   const [medidas, setMedidas] = useState("");
   const [stock, setStock] = useState("");
@@ -187,6 +191,8 @@ export default function ProdutoPage() {
   const [marcas, setMarcas] = useState("");
   const [etiquetas, setEtiquetas] = useState("");
   const [codigoBarras, setCodigoBarras] = useState("");
+
+  // Preços
   const [precoCompraSemIva, setPrecoCompraSemIva] = useState("");
   const [precoCompraComIva, setPrecoCompraComIva] = useState("");
   const [precoVendaSemIva, setPrecoVendaSemIva] = useState("");
@@ -195,22 +201,32 @@ export default function ProdutoPage() {
   const [margemRelacional, setMargemRelacional] = useState("");
   const [precoPrincipal, setPrecoPrincipal] = useState("");
   const [precoPromocional, setPrecoPromocional] = useState("");
-  const [imagensData, setImagensData] = useState<ImageData[]>([]);
-  const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
-  const [usarPrecosVariacoes, setUsarPrecosVariacoes] = useState(false);
-  const [variacoes, setVariacoes] = useState("");
-  const [paginaUrl, setPaginaUrl] = useState("automatico");
-  const [urlPersonalizada, setUrlPersonalizada] = useState("");
-  const [tituloPagina, setTituloPagina] = useState("");
-  const [descricaoPagina, setDescricaoPagina] = useState("");
-  const [metatagsPagina, setMetatagsPagina] = useState("");
-  const [especificacoes, setEspecificacoes] = useState("");
   const [lastChangedCompra, setLastChangedCompra] = useState<
     "semIva" | "comIva" | null
   >(null);
   const [lastChangedVenda, setLastChangedVenda] = useState<
     "semIva" | "comIva" | null
   >(null);
+  const [usarPrecosVariacoes, setUsarPrecosVariacoes] = useState(false);
+
+  // Imagens
+  const [imagensData, setImagensData] = useState<ImageData[]>([]);
+  const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
+
+  // Variações
+  const [variacoes, setVariacoes] = useState("");
+
+  // SEO
+  const [paginaUrl, setPaginaUrl] = useState("automatico");
+  const [urlPersonalizada, setUrlPersonalizada] = useState("");
+  const [tituloPagina, setTituloPagina] = useState("");
+  const [descricaoPagina, setDescricaoPagina] = useState("");
+  const [metatagsPagina, setMetatagsPagina] = useState("");
+
+  // Especificações: inicia sem nenhuma especificação
+  const [especificacoesList, setEspecificacoesList] = useState<
+    { titulo: string; descricao: string }[]
+  >([]);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -232,7 +248,7 @@ export default function ProdutoPage() {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
   }
 
-  // Calcular margens
+  // Calcular margens de lucro
   useEffect(() => {
     const compraSem = parseFloat(precoCompraSemIva) || 0;
     const vendaSem = parseFloat(precoVendaSemIva) || 0;
@@ -376,6 +392,26 @@ export default function ProdutoPage() {
     });
   }
 
+  // Especificações (novo formato)
+  function handleAddEspecificacao() {
+    setEspecificacoesList((prev) => [...prev, { titulo: "", descricao: "" }]);
+  }
+
+  function handleRemoveEspecificacao(index: number) {
+    setEspecificacoesList((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function handleChangeEspecificacao(
+    index: number,
+    field: "titulo" | "descricao",
+    value: string
+  ) {
+    setEspecificacoesList((prev) =>
+      prev.map((spec, i) => (i === index ? { ...spec, [field]: value } : spec))
+    );
+  }
+
+  // Reset formulário
   function handleNovoProduto() {
     setTitulo("");
     setReferencia("");
@@ -419,12 +455,13 @@ export default function ProdutoPage() {
     setTituloPagina("");
     setDescricaoPagina("");
     setMetatagsPagina("");
-    setEspecificacoes("");
+
+    // Especificações em array (vazio)
+    setEspecificacoesList([]);
 
     setFieldErrors([]);
     setActiveTab("detalhes");
-    // A notificação de "Novo Produto" fica apenas aqui
-    // (se clicarmos no botão "Novo Produto")
+
     addNotification(
       "info",
       "Novo Produto",
@@ -432,6 +469,7 @@ export default function ProdutoPage() {
     );
   }
 
+  // Submit
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFieldErrors([]);
@@ -445,7 +483,6 @@ export default function ProdutoPage() {
     if (!referencia.trim()) detalhesFields.push("referencia");
     if (!tipoProduto.trim()) detalhesFields.push("tipoProduto");
     if (!descricaoCurta.trim()) detalhesFields.push("descricaoCurta");
-
     if (detalhesFields.length > 0) {
       missingTabs.push("Detalhes");
       missingFields.push(...detalhesFields);
@@ -454,7 +491,6 @@ export default function ProdutoPage() {
     // "Outras"
     const outrasFields: string[] = [];
     if (!peso.trim()) outrasFields.push("peso");
-
     if (outrasFields.length > 0) {
       missingTabs.push("Outras informações");
       missingFields.push(...outrasFields);
@@ -466,6 +502,12 @@ export default function ProdutoPage() {
     if (precosFields.length > 0) {
       missingTabs.push("Preços");
       missingFields.push(...precosFields);
+    }
+
+    // "Imagens" - pelo menos 1 imagem (ou alguma já salva no array de URLs, se fosse o caso)
+    if (imagensData.length === 0 && uploadedImageUrls.length === 0) {
+      missingTabs.push("Imagens");
+      missingFields.push("imagens");
     }
 
     if (missingFields.length > 0) {
@@ -539,13 +581,15 @@ export default function ProdutoPage() {
         tituloPagina,
         descricaoPagina,
         metatagsPagina,
-        especificacoes,
+        especificacoes: especificacoesList, // array de objetos
         imagens: imageUrls,
       };
 
       const formData = new FormData();
       for (const [key, value] of Object.entries(productData)) {
         if (key === "imagens" && Array.isArray(value)) {
+          formData.append(key, JSON.stringify(value));
+        } else if (key === "especificacoes") {
           formData.append(key, JSON.stringify(value));
         } else {
           formData.append(
@@ -569,14 +613,13 @@ export default function ProdutoPage() {
         const errMsg = data.error || "Erro ao criar produto.";
         addNotification("error", "Falha", errMsg);
       } else {
-        // Produto criado com sucesso
         addNotification(
           "success",
           "Criar Produto",
           "Produto criado com sucesso."
         );
-        // Em vez de ir para dashboard, resetamos (sem notificar "Novo Produto")
-        // copiando a lógica do handleNovoProduto mas sem notificação
+
+        // Resetar form (sem a notificação "Novo Produto")
         setTitulo("");
         setReferencia("");
         setTipoProduto("");
@@ -619,7 +662,8 @@ export default function ProdutoPage() {
         setTituloPagina("");
         setDescricaoPagina("");
         setMetatagsPagina("");
-        setEspecificacoes("");
+
+        setEspecificacoesList([]);
 
         setFieldErrors([]);
         setActiveTab("detalhes");
@@ -635,12 +679,14 @@ export default function ProdutoPage() {
     }
   }
 
+  // Opções de estado
   const estadoOptions = [
     { label: "Novo", value: "novo" },
     { label: "Usado", value: "usado" },
     { label: "Recondicionado", value: "recondicionado" },
   ];
 
+  // ABA: Detalhes
   function renderAbaDetalhes() {
     return (
       <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
@@ -712,6 +758,7 @@ export default function ProdutoPage() {
     );
   }
 
+  // ABA: Outras informações
   function renderAbaOutras() {
     return (
       <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
@@ -884,6 +931,7 @@ export default function ProdutoPage() {
     );
   }
 
+  // ABA: Preços
   function renderAbaPrecos() {
     return (
       <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
@@ -1011,6 +1059,7 @@ export default function ProdutoPage() {
     );
   }
 
+  // ABA: Imagens
   function renderAbaImagens() {
     return (
       <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
@@ -1078,6 +1127,7 @@ export default function ProdutoPage() {
     );
   }
 
+  // ABA: Variações
   function renderAbaVariacoes() {
     return (
       <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
@@ -1102,6 +1152,7 @@ export default function ProdutoPage() {
     );
   }
 
+  // ABA: SEO
   function renderAbaSeo() {
     return (
       <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
@@ -1179,33 +1230,75 @@ export default function ProdutoPage() {
     );
   }
 
+  // ABA: Especificações (array de campos) - começa vazio, só adiciona no botão
   function renderAbaEspecificacoes() {
     return (
       <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
         <p className="text-sm text-gray-600 dark:text-gray-200">
-          Configure especificações (Memória, Processador, etc.).
+          Configure especificações únicas (ex: Memória, Processador, etc.).
         </p>
-        <TextAreaInput
-          placeholder="Ex: Memória: 16GB RAM; Disco: 512GB SSD; ..."
-          value={especificacoes}
-          onChange={setEspecificacoes}
-          rows={4}
-        />
+
+        {especificacoesList.length > 0 &&
+          especificacoesList.map((spec, index) => (
+            <div
+              key={index}
+              className="p-2 bg-gray-50 dark:bg-gray-700 rounded space-y-2 mb-2"
+            >
+              <div>
+                <label className="font-medium block mb-1">Título</label>
+                <SearchInput
+                  placeholder="Título da especificação..."
+                  withIcon={false}
+                  value={spec.titulo}
+                  onChange={(val) =>
+                    handleChangeEspecificacao(index, "titulo", val)
+                  }
+                />
+              </div>
+              <div>
+                <label className="font-medium block mb-1">Descrição</label>
+                <TextAreaInput
+                  placeholder="Descrição da especificação..."
+                  value={spec.descricao}
+                  onChange={(val) =>
+                    handleChangeEspecificacao(index, "descricao", val)
+                  }
+                  rows={2}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => handleRemoveEspecificacao(index)}
+                className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm"
+              >
+                Remover
+              </button>
+            </div>
+          ))}
+
+        <button
+          type="button"
+          onClick={handleAddEspecificacao}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 text-sm"
+        >
+          Adicionar Especificação
+        </button>
       </div>
     );
   }
 
+  // Render principal
   return (
     <div
       className="
-        container 
-        max-w-5xl 
-        mx-auto 
-        px-4 
-        py-6 
-        bg-white 
-        rounded 
-        shadow 
+        container
+        max-w-5xl
+        mx-auto
+        px-4
+        py-6
+        bg-white
+        rounded
+        shadow
         dark:bg-gray-800
       "
     >
@@ -1283,6 +1376,7 @@ export default function ProdutoPage() {
   );
 }
 
+// Botão para trocar de aba
 function TabButton({
   label,
   active,
