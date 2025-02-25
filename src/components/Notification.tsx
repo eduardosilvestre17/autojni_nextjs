@@ -43,7 +43,7 @@ export function NotificationItem({ notification, onClose }: Props) {
   useEffect(() => {
     const timer = setTimeout(() => {
       handleClose();
-    }, 4000);
+    }, 5000);
     return () => clearTimeout(timer);
   }, []);
 
