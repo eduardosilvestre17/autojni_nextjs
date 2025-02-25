@@ -139,6 +139,7 @@ async function isValidImage(file: File): Promise<boolean> {
   const hexBytes = Array.from(arr)
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
+
   if (hexBytes.startsWith("89504e47")) return true;
   if (hexBytes.startsWith("ffd8ff")) return true;
   if (hexBytes.startsWith("52494646") && hexBytes.length >= 16) {
@@ -938,14 +939,14 @@ export default function ProdutoPage() {
             {imagensData.map((item, index) => (
               <div
                 key={index}
-                className="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-700 rounded"
+                className="flex items-end gap-3 p-2 bg-gray-50 dark:bg-gray-700 rounded"
               >
                 <img
                   src={item.previewUrl}
                   alt="preview"
                   className="w-16 h-16 object-cover rounded"
                 />
-                <div className="flex-1">
+                <div>
                   <label className="text-sm block mb-1">
                     Nome (sem extensão)
                   </label>
@@ -964,7 +965,7 @@ export default function ProdutoPage() {
                 </div>
                 <button
                   type="button"
-                  className="px-2 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
+                  className="h-10 px-4 text-sm bg-red-500 text-white rounded hover:bg-red-600 flex items-center"
                   onClick={() => handleRemoveImage(index)}
                 >
                   Remover
