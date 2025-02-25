@@ -9,6 +9,7 @@ import { TextAreaInput } from "@/components/TextAreaInput";
 import { SelectInput } from "@/components/SelectInput";
 import { MdClose } from "react-icons/md";
 import { HiCheckCircle, HiXCircle, HiInformationCircle } from "react-icons/hi";
+import { CheckboxInput } from "@/components/CheckBoxInput";
 
 type NotificationType = "success" | "error" | "info";
 
@@ -223,7 +224,7 @@ export default function ProdutoPage() {
   const [descricaoPagina, setDescricaoPagina] = useState("");
   const [metatagsPagina, setMetatagsPagina] = useState("");
 
-  // Especificações: inicia sem nenhuma especificação
+  // Especificações (inicia vazio, sem item aberto)
   const [especificacoesList, setEspecificacoesList] = useState<
     { titulo: string; descricao: string }[]
   >([]);
@@ -504,7 +505,7 @@ export default function ProdutoPage() {
       missingFields.push(...precosFields);
     }
 
-    // "Imagens" - pelo menos 1 imagem (ou alguma já salva no array de URLs, se fosse o caso)
+    // "Imagens" - pelo menos 1 imagem (ou alguma já salva)
     if (imagensData.length === 0 && uploadedImageUrls.length === 0) {
       missingTabs.push("Imagens");
       missingFields.push("imagens");
@@ -758,28 +759,28 @@ export default function ProdutoPage() {
     );
   }
 
-  // ABA: Outras informações
+  // ABA: Outras informações (3 opções por linha, responsivo)
   function renderAbaOutras() {
     return (
       <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        {/* Container responsivo com 3 colunas no desktop, 2 no tablet, 1 no mobile */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {/* Peso */}
           <div>
             <label className="font-medium block mb-1">
-              Peso <span className="text-red-500">*</span>
+              Peso (Kg) <span className="text-red-500">*</span>
             </label>
-            <div className="flex items-center">
-              <SearchInput
-                type="number"
-                placeholder="0"
-                withIcon={false}
-                value={peso}
-                onChange={setPeso}
-                required
-                isError={fieldErrors.includes("peso")}
-              />
-              <span className="ml-2">kg</span>
-            </div>
+            <SearchInput
+              type="number"
+              placeholder="0"
+              withIcon={false}
+              value={peso}
+              onChange={setPeso}
+              required
+              isError={fieldErrors.includes("peso")}
+            />
           </div>
+          {/* Medidas */}
           <div>
             <label className="font-medium block mb-1">Medidas</label>
             <SearchInput
@@ -789,8 +790,7 @@ export default function ProdutoPage() {
               onChange={setMedidas}
             />
           </div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
+          {/* Stock */}
           <div>
             <label className="font-medium block mb-1">Stock</label>
             <SearchInput
@@ -801,6 +801,7 @@ export default function ProdutoPage() {
               onChange={setStock}
             />
           </div>
+          {/* Qtd. mínima */}
           <div>
             <label className="font-medium block mb-1">Qtd. mínima</label>
             <SearchInput
@@ -811,8 +812,7 @@ export default function ProdutoPage() {
               onChange={setQtdMinima}
             />
           </div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
+          {/* Unidade */}
           <div>
             <label className="font-medium block mb-1">Unidade</label>
             <SearchInput
@@ -822,6 +822,7 @@ export default function ProdutoPage() {
               onChange={setUnidade}
             />
           </div>
+          {/* Taxa de imposto */}
           <div>
             <label className="font-medium block mb-1">Taxa de imposto</label>
             <SearchInput
@@ -831,100 +832,94 @@ export default function ProdutoPage() {
               onChange={setTaxaImposto}
             />
           </div>
+          {/* Estado */}
+          <div>
+            <label className="font-medium block mb-1">Estado</label>
+            <SelectInput
+              options={estadoOptions}
+              value={estado}
+              onChange={setEstado}
+              placeholder="Selecione o estado..."
+            />
+          </div>
+          {/* Categorias */}
+          <div>
+            <label className="font-medium block mb-1">Categorias</label>
+            <SearchInput
+              placeholder="Adicionar categorias..."
+              withIcon={false}
+              value={categorias}
+              onChange={setCategorias}
+            />
+          </div>
+          {/* Marcas */}
+          <div>
+            <label className="font-medium block mb-1">Marcas</label>
+            <SearchInput
+              placeholder="Adicionar marcas..."
+              withIcon={false}
+              value={marcas}
+              onChange={setMarcas}
+            />
+          </div>
+          {/* Etiquetas */}
+          <div>
+            <label className="font-medium block mb-1">Etiquetas</label>
+            <SearchInput
+              placeholder="Adicionar etiquetas..."
+              withIcon={false}
+              value={etiquetas}
+              onChange={setEtiquetas}
+            />
+          </div>
+          {/* Código de barras */}
+          <div>
+            <label className="font-medium block mb-1">Código de barras</label>
+            <SearchInput
+              placeholder="Ex: 1234567890"
+              withIcon={false}
+              value={codigoBarras}
+              onChange={setCodigoBarras}
+            />
+          </div>
         </div>
-        <div>
-          <label className="font-medium block mb-1">Estado</label>
-          <SelectInput
-            options={estadoOptions}
-            value={estado}
-            onChange={setEstado}
-            placeholder="Selecione o estado..."
+
+        {/* Checkboxes em layout responsivo também */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+          <CheckboxInput
+            label="Vendas extra stock"
+            checked={vendasExtraStock}
+            onChange={(newValue) => setVendasExtraStock(newValue)}
           />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={vendasExtraStock}
-              onChange={() => setVendasExtraStock(!vendasExtraStock)}
-            />
-            <label>Vendas extra stock</label>
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={produtoFragil}
-              onChange={() => setProdutoFragil(!produtoFragil)}
-            />
-            <label>Produto frágil</label>
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={permitirUpload}
-              onChange={() => setPermitirUpload(!permitirUpload)}
-            />
-            <label>Permitir upload de ficheiros</label>
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={produtoGPSR}
-              onChange={() => setProdutoGPSR(!produtoGPSR)}
-            />
-            <label>Produto GPSR</label>
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={destaque}
-              onChange={() => setDestaque(!destaque)}
-            />
-            <label>Destaque</label>
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={novidade}
-              onChange={() => setNovidade(!novidade)}
-            />
-            <label>Novidade</label>
-          </div>
-        </div>
-        <div>
-          <label className="font-medium block mb-1">Categorias</label>
-          <SearchInput
-            placeholder="Adicionar categorias..."
-            withIcon={false}
-            value={categorias}
-            onChange={setCategorias}
+
+          <CheckboxInput
+            label="Produto frágil"
+            checked={produtoFragil}
+            onChange={(newValue) => setProdutoFragil(newValue)}
           />
-        </div>
-        <div>
-          <label className="font-medium block mb-1">Marcas</label>
-          <SearchInput
-            placeholder="Adicionar marcas..."
-            withIcon={false}
-            value={marcas}
-            onChange={setMarcas}
+
+          <CheckboxInput
+            label="Permitir upload de ficheiros"
+            checked={permitirUpload}
+            onChange={(newValue) => setPermitirUpload(newValue)}
           />
-        </div>
-        <div>
-          <label className="font-medium block mb-1">Etiquetas</label>
-          <SearchInput
-            placeholder="Adicionar etiquetas..."
-            withIcon={false}
-            value={etiquetas}
-            onChange={setEtiquetas}
+
+          <CheckboxInput
+            label="Produto GPSR"
+            checked={produtoGPSR}
+            onChange={(newValue) => setProdutoGPSR(newValue)}
           />
-        </div>
-        <div>
-          <label className="font-medium block mb-1">Código de barras</label>
-          <SearchInput
-            placeholder="Ex: 1234567890"
-            withIcon={false}
-            value={codigoBarras}
-            onChange={setCodigoBarras}
+
+          <CheckboxInput
+            label="Destaque"
+            checked={destaque}
+            onChange={(newValue) => setDestaque(newValue)}
+          />
+
+          <CheckboxInput
+            label="Novidade"
+            checked={novidade}
+            onChange={(newValue) => setNovidade(newValue)}
           />
         </div>
       </div>
@@ -1134,14 +1129,11 @@ export default function ProdutoPage() {
         <p className="text-sm text-gray-600 dark:text-gray-200">
           Configure opções extras (cor, tamanho, etc.).
         </p>
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={usarPrecosVariacoes}
-            onChange={() => setUsarPrecosVariacoes(!usarPrecosVariacoes)}
-          />
-          <label>Usar preços nas variações</label>
-        </div>
+        <CheckboxInput
+          label="Usar preços nas variações"
+          checked={usarPrecosVariacoes}
+          onChange={(newValue) => setUsarPrecosVariacoes(newValue)}
+        />
         <TextAreaInput
           placeholder="Ex: { cor: 'Branco', adicional: 5.00 }"
           value={variacoes}
@@ -1154,51 +1146,36 @@ export default function ProdutoPage() {
 
   // ABA: SEO
   function renderAbaSeo() {
+    // Opções do dropdown
+    const paginaUrlOptions = [
+      { label: "Automático", value: "automatico" },
+      { label: "Personalizado", value: "personalizado" },
+    ];
+
     return (
       <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
         <div>
           <label className="font-medium block mb-1">Página URL *</label>
-          <div className="flex flex-col gap-2">
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="paginaUrl"
-                value="automatico"
-                checked={paginaUrl === "automatico"}
-                onChange={() => setPaginaUrl("automatico")}
-              />
-              Automático
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="paginaUrl"
-                value="personalizado"
-                checked={paginaUrl === "personalizado"}
-                onChange={() => setPaginaUrl("personalizado")}
-              />
-              Personalizado
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="paginaUrl"
-                value="link"
-                checked={paginaUrl === "link"}
-                onChange={() => setPaginaUrl("link")}
-              />
-              Link
-            </label>
-          </div>
+          <SelectInput
+            options={paginaUrlOptions}
+            value={paginaUrl}
+            onChange={setPaginaUrl}
+            placeholder="Selecione uma opção..."
+          />
+
+          {/* Se a opção escolhida for "personalizado", exibimos o input para a URL */}
           {paginaUrl === "personalizado" && (
-            <SearchInput
-              placeholder="/meu-produto-personalizado"
-              withIcon={false}
-              value={urlPersonalizada}
-              onChange={setUrlPersonalizada}
-            />
+            <div className="mt-2">
+              <SearchInput
+                placeholder="/meu-produto-personalizado"
+                withIcon={false}
+                value={urlPersonalizada}
+                onChange={setUrlPersonalizada}
+              />
+            </div>
           )}
         </div>
+
         <div>
           <label className="font-medium block mb-1">Título da página</label>
           <SearchInput
@@ -1208,6 +1185,7 @@ export default function ProdutoPage() {
             onChange={setTituloPagina}
           />
         </div>
+
         <div>
           <label className="font-medium block mb-1">Descrição da página</label>
           <TextAreaInput
@@ -1217,6 +1195,7 @@ export default function ProdutoPage() {
             rows={2}
           />
         </div>
+
         <div>
           <label className="font-medium block mb-1">Metatags da página</label>
           <TextAreaInput
@@ -1230,7 +1209,7 @@ export default function ProdutoPage() {
     );
   }
 
-  // ABA: Especificações (array de campos) - começa vazio, só adiciona no botão
+  // ABA: Especificações (array de campos)
   function renderAbaEspecificacoes() {
     return (
       <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
@@ -1304,6 +1283,7 @@ export default function ProdutoPage() {
     >
       <style>{toastAnimationStyle}</style>
 
+      {/* Notificações (toasts) */}
       <div className="fixed top-4 right-4 z-50">
         {notifications.map((notif) => (
           <NotificationItem

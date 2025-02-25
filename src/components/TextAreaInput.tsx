@@ -63,7 +63,7 @@ export function TextAreaInput({
           text-foreground
           dark:text-dark-foreground
           resize-none
-          ${localError ? "!border-red-500" : ""}
+          ${localError ? "border-red-500" : ""}
         `}
         rows={rows}
         required={required}

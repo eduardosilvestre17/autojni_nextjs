@@ -69,7 +69,7 @@ export function SearchInput({
           dark:bg-search-bg-dark
           text-foreground 
           dark:text-dark-foreground
-          ${localError ? "!border-red-500" : ""}
+          ${localError ? "border-red-500" : ""}
         `}
       />
 
