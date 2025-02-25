@@ -217,9 +217,7 @@ export default function ProdutoPage() {
   // Variações
   const [variacoes, setVariacoes] = useState("");
 
-  // SEO
-  const [paginaUrl, setPaginaUrl] = useState("automatico");
-  const [urlPersonalizada, setUrlPersonalizada] = useState("");
+  // SEO (sem a parte da página URL)
   const [tituloPagina, setTituloPagina] = useState("");
   const [descricaoPagina, setDescricaoPagina] = useState("");
   const [metatagsPagina, setMetatagsPagina] = useState("");
@@ -393,7 +391,7 @@ export default function ProdutoPage() {
     });
   }
 
-  // Especificações (novo formato)
+  // Especificações
   function handleAddEspecificacao() {
     setEspecificacoesList((prev) => [...prev, { titulo: "", descricao: "" }]);
   }
@@ -451,13 +449,10 @@ export default function ProdutoPage() {
     setUsarPrecosVariacoes(false);
     setVariacoes("");
 
-    setPaginaUrl("automatico");
-    setUrlPersonalizada("");
     setTituloPagina("");
     setDescricaoPagina("");
     setMetatagsPagina("");
 
-    // Especificações em array (vazio)
     setEspecificacoesList([]);
 
     setFieldErrors([]);
@@ -505,7 +500,7 @@ export default function ProdutoPage() {
       missingFields.push(...precosFields);
     }
 
-    // "Imagens" - pelo menos 1 imagem (ou alguma já salva)
+    // "Imagens" - pelo menos 1 imagem
     if (imagensData.length === 0 && uploadedImageUrls.length === 0) {
       missingTabs.push("Imagens");
       missingFields.push("imagens");
@@ -577,12 +572,10 @@ export default function ProdutoPage() {
         precoPromocional,
         usarPrecosVariacoes,
         variacoes,
-        paginaUrl,
-        urlPersonalizada,
         tituloPagina,
         descricaoPagina,
         metatagsPagina,
-        especificacoes: especificacoesList, // array de objetos
+        especificacoes: especificacoesList, // array
         imagens: imageUrls,
       };
 
@@ -620,7 +613,7 @@ export default function ProdutoPage() {
           "Produto criado com sucesso."
         );
 
-        // Resetar form (sem a notificação "Novo Produto")
+        // Resetar form
         setTitulo("");
         setReferencia("");
         setTipoProduto("");
@@ -658,8 +651,6 @@ export default function ProdutoPage() {
         setUsarPrecosVariacoes(false);
         setVariacoes("");
 
-        setPaginaUrl("automatico");
-        setUrlPersonalizada("");
         setTituloPagina("");
         setDescricaoPagina("");
         setMetatagsPagina("");
@@ -759,7 +750,7 @@ export default function ProdutoPage() {
     );
   }
 
-  // ABA: Outras informações (3 opções por linha, responsivo)
+  // ABA: Outras informações
   function renderAbaOutras() {
     return (
       <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
@@ -1063,46 +1054,86 @@ export default function ProdutoPage() {
           <br />
           <strong>Formatos permitidos: PNG, JPG, WEBP.</strong>
         </p>
-        <input
-          type="file"
-          multiple
-          accept="image/png, image/jpeg, image/webp"
-          onChange={handleImagensChange}
-        />
+        {/* Botão customizado para evitar mostrar nome do ficheiro ao lado */}
+        <label className="inline-block bg-blue-500 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-600 text-sm">
+          Escolher ficheiros
+          <input
+            type="file"
+            multiple
+            accept="image/png, image/jpeg, image/webp"
+            onChange={handleImagensChange}
+            className="hidden"
+          />
+        </label>
+
+        {/* Lista de pré-visualização das imagens */}
         {imagensData.length > 0 && (
           <div className="mt-4 space-y-2">
             {imagensData.map((item, index) => (
               <div
                 key={index}
-                className="flex w-full items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700 rounded"
+                className="p-2 bg-gray-50 dark:bg-gray-700 rounded"
               >
-                <img
-                  src={item.previewUrl}
-                  alt="preview"
-                  className="w-16 h-16 object-cover rounded"
-                />
-                <div className="flex-1">
-                  <SearchInput
-                    placeholder="Nome do arquivo..."
-                    withIcon={false}
-                    value={item.baseName}
-                    onChange={(val) => handleImageBaseNameChange(index, val)}
+                {/*
+                No modo mobile:
+                  - Imagem em cima
+                  - Campo de nome logo abaixo
+                  - E numa nova linha a extensão (.jpeg, webp, etc.) à esquerda,
+                    e o botão "Remover" à direita
+
+                No modo computador (>= sm):
+                  - Tudo numa mesma linha (imagem, nome, extensão e botão),
+                    com o nome ocupando todo o espaço disponível.
+              */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                  {/* Imagem à esquerda (ou topo no mobile) */}
+                  <img
+                    src={item.previewUrl}
+                    alt="preview"
+                    className="w-16 h-16 object-cover rounded mx-auto sm:mx-0"
                   />
+
+                  {/* Envolve nome + extensão + botão */}
+                  <div className="flex-1 mt-2 sm:mt-0 w-full flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                    {/* Campo para nome do arquivo: expande em desktop */}
+                    <div className="flex-1 min-w-0">
+                      <SearchInput
+                        placeholder="Nome do arquivo..."
+                        withIcon={false}
+                        value={item.baseName}
+                        onChange={(val) =>
+                          handleImageBaseNameChange(index, val)
+                        }
+                      />
+                    </div>
+
+                    {/*
+                    Em mobile: ocupar linha inteira (w-full),
+                    e usar justify-between para ter extensão à esquerda
+                    e botão "Remover" à direita.
+                    Em desktop (>= sm): w-auto, ficam lado a lado após o campo.
+                  */}
+                    <div className="w-full sm:w-auto flex justify-between sm:justify-start gap-2">
+                      {/* Extensão */}
+                      <div className="h-10 w-20 flex items-center justify-center bg-gray-200 dark:bg-gray-600 rounded text-sm">
+                        .{item.extension}
+                      </div>
+                      {/* Botão remover */}
+                      <button
+                        type="button"
+                        className="h-10 px-4 text-sm bg-red-500 text-white rounded hover:bg-red-600 flex items-center justify-center"
+                        onClick={() => handleRemoveImage(index)}
+                      >
+                        Remover
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <div className="h-10 w-20 flex items-center justify-center bg-gray-200 dark:bg-gray-600 rounded text-sm">
-                  .{item.extension}
-                </div>
-                <button
-                  type="button"
-                  className="h-10 px-4 text-sm bg-red-500 text-white rounded hover:bg-red-600 flex items-center"
-                  onClick={() => handleRemoveImage(index)}
-                >
-                  Remover
-                </button>
               </div>
             ))}
           </div>
         )}
+
         {uploadedImageUrls.length > 0 && (
           <div className="mt-4 p-2 bg-gray-50 dark:bg-gray-800 rounded">
             <h4 className="text-sm font-semibold mb-2">Imagens Salvas:</h4>
@@ -1146,36 +1177,8 @@ export default function ProdutoPage() {
 
   // ABA: SEO
   function renderAbaSeo() {
-    // Opções do dropdown
-    const paginaUrlOptions = [
-      { label: "Automático", value: "automatico" },
-      { label: "Personalizado", value: "personalizado" },
-    ];
-
     return (
       <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
-        <div>
-          <label className="font-medium block mb-1">Página URL *</label>
-          <SelectInput
-            options={paginaUrlOptions}
-            value={paginaUrl}
-            onChange={setPaginaUrl}
-            placeholder="Selecione uma opção..."
-          />
-
-          {/* Se a opção escolhida for "personalizado", exibimos o input para a URL */}
-          {paginaUrl === "personalizado" && (
-            <div className="mt-2">
-              <SearchInput
-                placeholder="/meu-produto-personalizado"
-                withIcon={false}
-                value={urlPersonalizada}
-                onChange={setUrlPersonalizada}
-              />
-            </div>
-          )}
-        </div>
-
         <div>
           <label className="font-medium block mb-1">Título da página</label>
           <SearchInput
@@ -1209,7 +1212,7 @@ export default function ProdutoPage() {
     );
   }
 
-  // ABA: Especificações (array de campos)
+  // ABA: Especificações
   function renderAbaEspecificacoes() {
     return (
       <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
@@ -1296,7 +1299,22 @@ export default function ProdutoPage() {
 
       <h1 className="text-2xl font-bold mb-4">Produto - Configuração Geral</h1>
 
-      <div className="flex space-x-4 mb-6 text-sm">
+      {/* Abas responsivas */}
+      <div
+        className="
+          flex
+          flex-wrap
+          items-center
+          gap-4
+          mb-6
+          text-sm
+          border-b
+          border-gray-200
+          dark:border-gray-700
+          pb-2
+          overflow-x-auto
+        "
+      >
         <TabButton
           label="Detalhes"
           active={activeTab === "detalhes"}
@@ -1370,12 +1388,18 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`pb-2 border-b-2 transition-colors
+      className={`
+        whitespace-nowrap
+        transition-colors
+        border-b-2
+        px-2
+        pb-2
         ${
           active
             ? "border-blue-600 font-semibold text-gray-800 dark:text-white"
             : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:border-gray-300"
-        }`}
+        }
+      `}
     >
       {label}
     </button>

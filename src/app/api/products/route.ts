@@ -2,6 +2,18 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Decimal } from "@prisma/client/runtime/library";
 
+// Exemplo simples de função slugify para criar um "URL automático"
+// Caso não queira usar slug, basta remover e não adicionar no create()
+function slugify(text: string) {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[\s]+/g, "-") // espaços viram "-"
+    .replace(/[^\w\-]+/g, "") // remove caracteres não alfanuméricos
+    .replace(/\-\-+/g, "-") // colapsa múltiplos "-" em um só
+    .replace(/^-+|-+$/g, ""); // remove "-" do início e do fim
+}
+
 export async function POST(req: Request) {
   try {
     // Obter e processar o formData
@@ -10,7 +22,7 @@ export async function POST(req: Request) {
     for (const [key, value] of formData.entries()) {
       data[key] = value;
     }
-    // Log dos dados recebidos (todos os campos)
+    // Log dos dados recebidos
     console.log("Dados do formData:", data);
 
     data.hasMedidas = data.hasMedidas === "true";
@@ -59,8 +71,7 @@ export async function POST(req: Request) {
       ? new Decimal(data.precoPromocional)
       : null;
 
-    // Tratamento do campo "imagens"
-    // Como o formData já contém "imagens" como string JSON, fazemos o parse dela
+    // Tratamento do campo "imagens": vem como JSON string
     let imagensArray: string[] = [];
     if (data.imagens) {
       try {
@@ -72,9 +83,13 @@ export async function POST(req: Request) {
     }
     console.log("Array de imagens a ser salvo:", imagensArray);
 
+    // Exemplo: gerar "slug" com base no título, se quiser
+    const slug = slugify(data.titulo);
+
     // Log final dos dados que serão enviados ao Prisma
     console.log("Dados finais para criação do produto:", {
       ...data,
+      slug,
       peso: pesoDecimal,
       taxaImposto: taxaImpostoDecimal,
       precoCompraSemIva: compraNoIvaDecimal,
@@ -124,8 +139,7 @@ export async function POST(req: Request) {
         precoPromocional: precoPromocionalDecimal,
         usarPrecosVariacoes: data.usarPrecosVariacoes || false,
         variacoes: data.variacoes || null,
-        paginaUrl: data.paginaUrl || null,
-        urlPersonalizada: data.urlPersonalizada || null,
+        slug,
         tituloPagina: data.tituloPagina || null,
         descricaoPagina: data.descricaoPagina || null,
         metatagsPagina: data.metatagsPagina || null,
