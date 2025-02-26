@@ -1,54 +1,33 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { FaSun, FaMoon } from "react-icons/fa";
-
-// Função auxiliar para obter preferência atual (localStorage ou sistema)
-function getInitialTheme(): boolean {
-  // Evita erro no SSR: só lemos localStorage se window estiver definido
-  if (typeof window !== "undefined") {
-    const storedTheme = localStorage.getItem("theme");
-    if (storedTheme === "dark") {
-      return true;
-    }
-    if (storedTheme === "light") {
-      return false;
-    }
-    // Caso não haja nada em localStorage, segue preferência do sistema:
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
-  }
-  // Se estiver renderizando no servidor, apenas retorna 'false' por segurança
-  return false;
-}
+import { useTheme } from "next-themes";
 
 export function ThemeSwitch() {
-  // Iniciamos já com o valor correto de "dark" ou "light", sem retornar null
-  const [isDark, setIsDark] = useState<boolean>(getInitialTheme);
+  // Hook do next-themes
+  const { theme, systemTheme, setTheme } = useTheme();
 
-  // Sempre que mudar 'isDark', atualiza o <html> e o localStorage
-  useEffect(() => {
-    const html = document.documentElement;
-    if (isDark) {
-      html.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      html.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
-  }, [isDark]);
+  // Se 'theme' estiver "system", pegamos o valor real do sistema
+  const currentTheme = theme === "system" ? systemTheme : theme;
+  const isDark = currentTheme === "dark";
 
-  // Basta alternar o boolean
+  // Ao clicar, se estiver em 'dark', muda pra 'light'; senão, muda pra 'dark'
   function toggleTheme() {
-    setIsDark(!isDark);
+    setTheme(isDark ? "light" : "dark");
   }
 
   return (
     <label className="relative inline-flex items-center cursor-pointer">
+      {/* 
+        Podíamos usar um <button> normal. Mas, como no seu exemplo,
+        deixo um <input type="checkbox"> estilizado. 
+      */}
       <input
         type="checkbox"
         className="sr-only peer"
         checked={isDark}
         onChange={toggleTheme}
+        // Se preferir, pode desabilitar o input enquanto 'systemTheme' não estiver carregado
       />
       <div
         className={`
@@ -60,8 +39,8 @@ export function ThemeSwitch() {
       >
         <div
           className={`
-            absolute top-[2px] left-[2px] 
-            w-5 h-5 rounded-full border border-gray-300 bg-white 
+            absolute top-[2px] left-[2px]
+            w-5 h-5 rounded-full border border-gray-300 bg-white
             transition-all duration-300
             flex items-center justify-center
             ${isDark ? "translate-x-5" : ""}
