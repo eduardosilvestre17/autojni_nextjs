@@ -11,7 +11,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-8 items-center">
           <div>
             <h1 className="text-3xl md:text-5xl font-bold mb-4">
-              Bem-vindo ao <span className="text-myOrange">AutoJNI</span>
+              Bem-vindo à <span className="text-myOrange">AutoJNI</span>
             </h1>
             <p className="mb-6 text-lg">
               A sua loja online para encontrar as melhores peças e acessórios
