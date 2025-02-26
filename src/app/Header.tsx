@@ -1,4 +1,3 @@
-// src/app/Header.tsx
 "use client";
 
 import Link from "next/link";
@@ -18,6 +17,7 @@ export default function Header() {
   useEffect(() => {
     const init = sp?.get("search");
     if (init) setSearchTerm(init);
+    // Se você só quer pegar esse valor 1 vez, remova "[sp]" do array de dependências.
   }, [sp]);
 
   // 2) Botão hamburguer (abre/fecha menu mobile)
@@ -36,7 +36,7 @@ export default function Header() {
     }
   }
 
-  // 4) Ícones à direita
+  // 4) Ícones à direita (favoritos, carrinho, login, tema)
   const IconsAndTheme = () => (
     <div className="flex items-center gap-4">
       <div className="flex items-center gap-2">

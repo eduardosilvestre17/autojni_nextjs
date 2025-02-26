@@ -1,21 +1,31 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import { FaSun, FaMoon } from "react-icons/fa";
 
-export function ThemeSwitch() {
-  // Em vez de isDark: boolean | null, faremos boolean
-  // Default: assume "light" e depois corrigimos se localStorage = "dark"
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    const stored = localStorage.getItem("theme");
-    if (stored === "dark") {
-      setIsDark(true);
-    } else {
-      setIsDark(false);
+// Função auxiliar para obter preferência atual (localStorage ou sistema)
+function getInitialTheme(): boolean {
+  // Evita erro no SSR: só lemos localStorage se window estiver definido
+  if (typeof window !== "undefined") {
+    const storedTheme = localStorage.getItem("theme");
+    if (storedTheme === "dark") {
+      return true;
     }
-  }, []);
+    if (storedTheme === "light") {
+      return false;
+    }
+    // Caso não haja nada em localStorage, segue preferência do sistema:
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+  // Se estiver renderizando no servidor, apenas retorna 'false' por segurança
+  return false;
+}
 
+export function ThemeSwitch() {
+  // Iniciamos já com o valor correto de "dark" ou "light", sem retornar null
+  const [isDark, setIsDark] = useState<boolean>(getInitialTheme);
+
+  // Sempre que mudar 'isDark', atualiza o <html> e o localStorage
   useEffect(() => {
     const html = document.documentElement;
     if (isDark) {
@@ -27,14 +37,18 @@ export function ThemeSwitch() {
     }
   }, [isDark]);
 
-  // Agora nunca retornamos null.
+  // Basta alternar o boolean
+  function toggleTheme() {
+    setIsDark(!isDark);
+  }
+
   return (
     <label className="relative inline-flex items-center cursor-pointer">
       <input
         type="checkbox"
         className="sr-only peer"
         checked={isDark}
-        onChange={() => setIsDark(!isDark)}
+        onChange={toggleTheme}
       />
       <div
         className={`
