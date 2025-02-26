@@ -1,14 +1,15 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import { FaSun, FaMoon } from "react-icons/fa";
 
 export function ThemeSwitch() {
-  const [isDark, setIsDark] = useState<boolean | null>(null);
+  // Em vez de isDark: boolean | null, faremos boolean
+  // Default: assume "light" e depois corrigimos se localStorage = "dark"
+  const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    const storedTheme = localStorage.getItem("theme");
-    if (storedTheme === "dark") {
+    const stored = localStorage.getItem("theme");
+    if (stored === "dark") {
       setIsDark(true);
     } else {
       setIsDark(false);
@@ -16,7 +17,6 @@ export function ThemeSwitch() {
   }, []);
 
   useEffect(() => {
-    if (isDark === null) return;
     const html = document.documentElement;
     if (isDark) {
       html.classList.add("dark");
@@ -27,10 +27,7 @@ export function ThemeSwitch() {
     }
   }, [isDark]);
 
-  if (isDark === null) {
-    return null;
-  }
-
+  // Agora nunca retornamos null.
   return (
     <label className="relative inline-flex items-center cursor-pointer">
       <input

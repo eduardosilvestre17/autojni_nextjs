@@ -1,5 +1,5 @@
 "use client";
-import { useState, ChangeEvent, FocusEvent } from "react";
+import { useState, ChangeEvent, FocusEvent, KeyboardEvent } from "react";
 
 interface SearchInputProps {
   placeholder?: string;
@@ -10,6 +10,7 @@ interface SearchInputProps {
   onChange?: (newValue: string) => void;
   isError?: boolean;
   required?: boolean;
+  onKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void; // ADICIONE ESTA PROP
 }
 
 export function SearchInput({
@@ -21,6 +22,7 @@ export function SearchInput({
   onChange,
   isError = false,
   required = false,
+  onKeyDown,
 }: SearchInputProps) {
   const [inputValue, setInputValue] = useState(value);
   const [localError, setLocalError] = useState(isError);
@@ -55,6 +57,7 @@ export function SearchInput({
         value={inputValue}
         onChange={handleInputChange}
         onFocus={handleFocus}
+        onKeyDown={onKeyDown} // USE A NOVA PROP
         className={`
           w-full 
           border 

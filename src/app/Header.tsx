@@ -1,28 +1,49 @@
+// src/app/Header.tsx
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { ThemeSwitch } from "@/components/ThemeSwitch";
-// Importe o componente de pesquisa
 import { SearchInput } from "@/components/SearchInput";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen((prev) => !prev);
-  };
+  const router = useRouter();
+  const sp = useSearchParams();
 
-  // Agrupamos ícones e switch em dois "blocos" para aumentar a distância
+  // 1) Obtem o valor inicial de ?search= e coloca no state local
+  useEffect(() => {
+    const init = sp?.get("search");
+    if (init) setSearchTerm(init);
+  }, [sp]);
+
+  // 2) Botão hamburguer (abre/fecha menu mobile)
+  function toggleMobileMenu() {
+    setMobileMenuOpen(!mobileMenuOpen);
+  }
+
+  // 3) Ao pressionar Enter no campo de busca
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      if (searchTerm.trim()) {
+        router.replace(`/loja?search=${encodeURIComponent(searchTerm)}`);
+      } else {
+        router.replace("/loja");
+      }
+    }
+  }
+
+  // 4) Ícones à direita
   const IconsAndTheme = () => (
     <div className="flex items-center gap-4">
-      {/* Bloco de ícones */}
       <div className="flex items-center gap-2">
         {/* Favoritos */}
         <Link
           href="/favoritos"
-          className="flex items-center p-2 
-                     text-foreground dark:text-dark-foreground 
+          className="flex items-center p-2 text-foreground dark:text-dark-foreground
                      hover:text-red-500 dark:hover:text-red-400
                      transition-colors text-lg"
         >
@@ -31,8 +52,7 @@ export default function Header() {
         {/* Carrinho */}
         <Link
           href="/carrinho"
-          className="flex items-center p-2
-                     text-foreground dark:text-dark-foreground
+          className="flex items-center p-2 text-foreground dark:text-dark-foreground
                      hover:text-primary-dark dark:hover:text-primary
                      transition-colors text-lg"
         >
@@ -43,15 +63,14 @@ export default function Header() {
           href="/login"
           className="inline-flex items-center space-x-2 whitespace-nowrap p-2
                      text-foreground dark:text-dark-foreground
-                     hover:text-primary-dark dark:hover:text-primary 
+                     hover:text-primary-dark dark:hover:text-primary
                      transition-colors text-lg"
         >
           <i className="fa-solid fa-user" />
           <span className="hidden md:inline">Iniciar Sessão</span>
         </Link>
       </div>
-
-      {/* Switch de tema fica mais afastado dos ícones */}
+      {/* Switch de tema */}
       <ThemeSwitch />
     </div>
   );
@@ -59,23 +78,16 @@ export default function Header() {
   return (
     <header className="bg-white dark:bg-gray-900 shadow relative">
       <div className="container mx-auto px-4 py-4">
-        {/* 
-          Em telas md+, definimos 3 "colunas" manuais:
-          1) auto (hambúrguer + logo)
-          2) 1fr  (barra de pesquisa)
-          3) auto (ícones + switch)
-        */}
         <div className="flex flex-col items-center gap-4 md:grid md:grid-cols-[auto,1fr,auto]">
-          {/* Coluna 1 (Esquerda): Hambúrguer + Logo */}
+          {/* Parte esquerda: hambúrguer + logo */}
           <div className="flex items-center justify-between w-full md:w-auto">
             <div className="flex items-center gap-2">
-              {/* Botão Hambúrguer */}
               <button
                 onClick={toggleMobileMenu}
                 aria-label="Abrir menu"
                 className="inline-flex items-center leading-none align-middle
                            text-primary dark:text-white
-                           transition-colors hover:text-myOrange 
+                           transition-colors hover:text-myOrange
                            dark:hover:text-myOrange"
               >
                 <svg
@@ -92,8 +104,6 @@ export default function Header() {
                   />
                 </svg>
               </button>
-
-              {/* Texto "AutoJNI" */}
               <Link
                 href="/"
                 className="inline-flex items-center leading-none align-middle
@@ -106,29 +116,33 @@ export default function Header() {
               </Link>
             </div>
 
-            {/* Ícones + Switch (apenas no mobile) */}
+            {/* Ícones (mobile) */}
             <div className="md:hidden">
               <IconsAndTheme />
             </div>
           </div>
 
-          {/* Coluna 2 (Centro): Barra de pesquisa (sem lupa) */}
-          <div className="flex justify-center w-full">
-            <SearchInput
-              placeholder="Pesquisar produtos..."
-              withIcon={true}
-              // Se quiser com lupa, mude para withIcon={true}
-            />
+          {/* Campo de pesquisa */}
+          <div className="flex justify-center w-full relative">
+            <div className="w-full md:w-[400px]">
+              <SearchInput
+                placeholder="Pesquisar produtos..."
+                withIcon
+                value={searchTerm}
+                onChange={setSearchTerm}
+                onKeyDown={handleKeyDown}
+              />
+            </div>
           </div>
 
-          {/* Coluna 3 (Direita): Ícones + switch (somente md+) */}
+          {/* Ícones + tema (desktop) */}
           <div className="hidden md:flex justify-end">
             <IconsAndTheme />
           </div>
         </div>
       </div>
 
-      {/* Drawer (menu) + Overlay (mobile) */}
+      {/* Drawer (mobile) */}
       <div
         className={`
           fixed inset-0 z-50 transition-all duration-300 ease-in-out
@@ -139,12 +153,11 @@ export default function Header() {
           }
         `}
       >
-        {/* Overlay */}
+        {/* Overlay escuro */}
         <div
           className="absolute inset-0 bg-black bg-opacity-50"
           onClick={() => setMobileMenuOpen(false)}
         />
-
         {/* Painel lateral */}
         <div
           className={`
@@ -163,12 +176,11 @@ export default function Header() {
               aria-label="Fechar menu"
               className="text-foreground dark:text-dark-foreground
                          hover:text-primary-dark dark:hover:text-primary
-                         transition-colors"
+                         transition-colors text-2xl"
             >
-              <i className="fa-solid fa-xmark text-2xl"></i>
+              <i className="fa-solid fa-xmark" />
             </button>
           </div>
-
           <nav className="p-4">
             <ul className="flex flex-col space-y-4 font-medium text-foreground dark:text-dark-foreground">
               <li>
@@ -183,7 +195,6 @@ export default function Header() {
                   <span>Home</span>
                 </Link>
               </li>
-              {/* Loja Online */}
               <li>
                 <Link
                   href="/loja"
