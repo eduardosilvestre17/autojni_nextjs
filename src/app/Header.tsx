@@ -2,9 +2,35 @@
 
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ThemeSwitch } from "@/components/ThemeSwitch";
 import { SearchInput } from "@/components/SearchInput";
+
+// Hook simples de debounce
+function useDebounce(value: string, delay: number) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    // Limpar o timeout anterior, se existir
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    // Iniciar novo timeout
+    timeoutRef.current = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    // Cleanup quando o componente desmontar ou 'value'/'delay' mudar
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -13,30 +39,50 @@ export default function Header() {
   const router = useRouter();
   const sp = useSearchParams();
 
-  // 1) Obtem o valor inicial de ?search= e coloca no state local
+  // Guardamos a página onde o utilizador estava antes de começar a digitar
+  const [backPath, setBackPath] = useState("");
+
+  // No primeiro render, capturamos a URL atual
+  useEffect(() => {
+    // Por segurança, verifique se window está definido
+    if (typeof window !== "undefined") {
+      // Armazena o pathname + query string para voltar exatamente onde o user estava
+      setBackPath(window.location.pathname + window.location.search);
+    }
+  }, []);
+
+  // 1) Obter valor inicial de ?search= da URL (caso exista)
   useEffect(() => {
     const init = sp?.get("search");
     if (init) setSearchTerm(init);
-    // Se você só quer pegar esse valor 1 vez, remova "[sp]" do array de dependências.
   }, [sp]);
 
-  // 2) Botão hamburguer (abre/fecha menu mobile)
+  // 2) debounce de 300ms no texto digitado
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  // 3) Sempre que 'debouncedSearchTerm' mudar, atualiza a rota
+  useEffect(() => {
+    // Se tem algo digitado, vamos para /loja?search=...
+    if (debouncedSearchTerm.trim()) {
+      router.replace(`/loja?search=${encodeURIComponent(debouncedSearchTerm)}`);
+    }
+    // Caso contrário (string vazia), voltamos para a rota anterior (backPath)
+    else {
+      // Se não tiver nada em backPath, por segurança pode voltar ao "/"
+      if (backPath) {
+        router.replace(backPath);
+      } else {
+        router.replace("/");
+      }
+    }
+  }, [debouncedSearchTerm, router, backPath]);
+
+  // 4) Botão de menu mobile
   function toggleMobileMenu() {
     setMobileMenuOpen(!mobileMenuOpen);
   }
 
-  // 3) Ao pressionar Enter no campo de busca
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter") {
-      if (searchTerm.trim()) {
-        router.replace(`/loja?search=${encodeURIComponent(searchTerm)}`);
-      } else {
-        router.replace("/loja");
-      }
-    }
-  }
-
-  // 4) Ícones à direita (favoritos, carrinho, login, tema)
+  // 5) Ícones à direita
   const IconsAndTheme = () => (
     <div className="flex items-center gap-4">
       <div className="flex items-center gap-2">
@@ -130,7 +176,6 @@ export default function Header() {
                 withIcon
                 value={searchTerm}
                 onChange={setSearchTerm}
-                onKeyDown={handleKeyDown}
               />
             </div>
           </div>
