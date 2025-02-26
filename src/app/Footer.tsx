@@ -148,7 +148,8 @@ export default function Footer() {
       {/* Rodapé final */}
       <div className="border-t border-gray-300 dark:border-gray-700 py-4 text-center text-xs">
         <p className="text-gray-500 dark:text-gray-400 mb-1">
-          © 2025 Desenvolvido por MegaPC. Todos os direitos reservados.
+          © {new Date().getFullYear()} Desenvolvido por MegaPC. Todos os
+          direitos reservados.
         </p>
         {/* Disclaimers e links */}
         <div className="flex flex-wrap justify-center items-center gap-4 text-gray-500 dark:text-gray-400">

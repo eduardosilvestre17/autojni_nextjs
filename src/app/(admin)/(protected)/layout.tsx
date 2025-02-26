@@ -58,19 +58,6 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
             >
               Produtos
             </Link>
-            <Link
-              href="/posts"
-              className="
-                block px-3 py-2 
-                rounded 
-                hover:bg-myOrange 
-                dark:hover:bg-myOrange-dark
-                transition-colors 
-                cursor-pointer
-              "
-            >
-              Posts
-            </Link>
           </nav>
 
           <button
@@ -230,20 +217,6 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
                 "
               >
                 Produtos
-              </Link>
-              <Link
-                href="/posts"
-                onClick={() => setSidebarOpen(false)}
-                className="
-                  block px-3 py-2 
-                  rounded 
-                  hover:bg-myOrange 
-                  dark:hover:bg-myOrange-dark
-                  transition-colors 
-                  cursor-pointer
-                "
-              >
-                Posts
               </Link>
             </nav>
 
