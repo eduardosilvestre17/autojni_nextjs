@@ -9,23 +9,12 @@ import { ThemeSwitch } from "@/components/ThemeSwitch";
 export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  /**
-   * handleLogout:
-   * Chamamos "signOut()" com "callbackUrl", o que garante que o usuário seja
-   * redirecionado para "/login" imediatamente após o logout.
-   */
   const handleLogout = () => {
     signOut({ callbackUrl: "/login" });
   };
 
   return (
     <Providers>
-      {/*
-        min-h-screen -> ocupa a altura inteira da tela
-        flex         -> layout em colunas
-        bg-background dark:bg-dark-bg -> usa cores do tailwind.config
-        transition-colors -> animação suave ao trocar tema
-      */}
       <div className="min-h-screen flex bg-background dark:bg-dark-bg transition-colors relative">
         {/* ===================== SIDEBAR (DESKTOP) ===================== */}
         <aside className="hidden md:flex md:flex-col md:w-64 bg-primary dark:bg-primary-dark text-white p-6 shadow-lg transition-colors">
@@ -77,10 +66,6 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
             Logout
           </button>
 
-          {/*
-            Switch de tema:
-            Componente que alterna entre modo claro/escuro.
-          */}
           <div className="flex items-center justify-center my-4">
             <ThemeSwitch />
           </div>
@@ -95,10 +80,6 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
         </aside>
 
         {/* ===================== HEADER (MOBILE) ===================== */}
-        {/*
-          Em telas menores que "md", exibimos um "header" com o hambúrguer
-          que controla a abertura/fechamento da sidebar.
-        */}
         <header
           className="
             md:hidden 
@@ -113,12 +94,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
           "
           onClick={() => setSidebarOpen(!sidebarOpen)}
         >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor">
             {sidebarOpen ? (
               <path
                 strokeLinecap="round"
@@ -141,8 +117,8 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
         <div
           className={`
             md:hidden 
-            fixed inset-0 z-50 
-            flex
+            fixed inset-0 
+            z-50 
             transition-all 
             duration-300
             ${
@@ -152,10 +128,28 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
             }
           `}
         >
-          {/* Conteúdo da Sidebar Mobile */}
+          {/* Overlay atrás da Sidebar */}
+          <div
+            onClick={() => setSidebarOpen(false)}
+            className={`
+              absolute
+              inset-0 
+              bg-black 
+              bg-opacity-50
+              transition-opacity 
+              duration-300
+              ${sidebarOpen ? "opacity-100" : "opacity-0"}
+            `}
+          />
+
+          {/* Container da Sidebar em si */}
           <div
             className={`
-              w-64 
+              absolute
+              left-0
+              top-0
+              bottom-0
+              w-64
               bg-primary 
               dark:bg-primary-dark 
               text-white 
@@ -173,12 +167,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
                 onClick={() => setSidebarOpen(false)}
                 className="focus:outline-none cursor-pointer"
               >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -237,7 +226,6 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
               Logout
             </button>
 
-            {/* Switch de tema (Mobile) */}
             <div className="flex items-center justify-center my-4">
               <ThemeSwitch />
             </div>
@@ -250,31 +238,9 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
               <p>Versão 1.0</p>
             </footer>
           </div>
-
-          {/*
-            Overlay:
-            Quando a sidebar está aberta, exibimos um overlay preto semi-transparente
-            para cobrir o resto do conteúdo. Ao clicar, fecha o menu.
-          */}
-          <div
-            className={`
-              flex-1 
-              transition-opacity 
-              duration-300 
-              ${
-                sidebarOpen
-                  ? "opacity-100 bg-black bg-opacity-50"
-                  : "opacity-0 pointer-events-none"
-              }
-            `}
-            onClick={() => setSidebarOpen(false)}
-          ></div>
         </div>
 
-        {/*
-          CONTEÚDO PRINCIPAL:
-          Aqui é onde o resto da aplicação é renderizado (children).
-        */}
+        {/* CONTEÚDO PRINCIPAL */}
         <main className="flex-1 p-6 overflow-auto">{children}</main>
       </div>
     </Providers>
