@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 
 export interface Product {
   id: string;
@@ -27,16 +27,39 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [explodeHearts, setExplodeHearts] = useState(false);
   const [iconPop, setIconPop] = useState(false);
 
+  // Referência para armazenar timeouts (para poder limpar em cada clique)
+  const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
+
+  // Limpa timeouts no desmontar do componente (boas práticas)
+  useEffect(() => {
+    return () => {
+      timeoutsRef.current.forEach(clearTimeout);
+    };
+  }, []);
+
   // Clique no coração
   function handleWishlistClick() {
-    // Dispara explosão + anima pop
-    setExplodeHearts(true);
-    setIconPop(true);
+    // Limpa eventuais timeouts em aberto (caso o usuário clique várias vezes rápido)
+    timeoutsRef.current.forEach(clearTimeout);
+    timeoutsRef.current = [];
+
+    // Reinicia o estado para garantir que a animação possa recomeçar do zero
+    setExplodeHearts(false);
+    setIconPop(false);
+
+    // Dispara novamente a animação de forma assíncrona (0 ms)
+    timeoutsRef.current.push(
+      setTimeout(() => {
+        setExplodeHearts(true);
+        setIconPop(true);
+      }, 0)
+    );
 
     // Desliga a explosão após 1s
-    setTimeout(() => setExplodeHearts(false), 1000);
+    timeoutsRef.current.push(setTimeout(() => setExplodeHearts(false), 1000));
+
     // Desliga o pop após 0.6s
-    setTimeout(() => setIconPop(false), 600);
+    timeoutsRef.current.push(setTimeout(() => setIconPop(false), 600));
   }
 
   return (
