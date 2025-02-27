@@ -1,5 +1,6 @@
 "use client";
-import { useState, ChangeEvent } from "react";
+
+import React, { useState, useRef, useEffect, MouseEvent } from "react";
 
 interface SelectInputOption {
   label: string;
@@ -8,9 +9,9 @@ interface SelectInputOption {
 
 interface SelectInputProps {
   options: SelectInputOption[];
-  value: string;
+  value: string; // valor selecionado atual
   onChange?: (newValue: string) => void;
-  placeholder?: string;
+  placeholder?: string; // texto mostrado quando não há valor selecionado
   isError?: boolean;
   required?: boolean;
   className?: string;
@@ -25,72 +26,136 @@ export function SelectInput({
   required = false,
   className = "",
 }: SelectInputProps) {
-  // Caso queira estado interno, mas normalmente deixamos controlado externamente
-  const [selected, setSelected] = useState(value);
+  // Estado de aberto/fechado
+  const [isOpen, setIsOpen] = useState(false);
 
-  // Se o "value" mudar externamente, atualizamos o estado
-  if (value !== selected) {
-    setSelected(value);
-  }
+  // Referência para capturar clique fora
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const handleChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    setSelected(e.target.value);
-    if (onChange) onChange(e.target.value);
+  // Alterna abrir/fechar
+  const toggleDropdown = (e?: MouseEvent<HTMLDivElement>) => {
+    setIsOpen((prev) => !prev);
   };
 
+  // Fecha ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent | globalThis.MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Seleciona opção
+  const handleOptionClick = (optionValue: string) => {
+    if (onChange) onChange(optionValue);
+    setIsOpen(false);
+  };
+
+  // Label da opção selecionada
+  const selectedLabel = options.find((opt) => opt.value === value)?.label || "";
+  // Exibe placeholder se não estiver selecionado
+  const displayText = selectedLabel || placeholder;
+
   return (
-    <div className={`relative ${className}`}>
-      <select
-        required={required}
-        value={selected}
-        onChange={handleChange}
+    <div
+      ref={dropdownRef}
+      className={`relative inline-block text-left ${className}`}
+    >
+      {/* Botão (label + ícone) */}
+      <div
+        onClick={toggleDropdown}
         className={`
-          w-full
-          border
-          dark:border-search-border-dark
+          flex justify-between items-center
+          border dark:border-search-border-dark
           rounded
-          px-4
-          py-2
+          px-4 py-2
+          cursor-pointer
+          bg-search-bg dark:bg-search-bg-dark
+          text-foreground dark:text-dark-foreground
+          select-none
           focus:outline-none
-          focus:border-primary
-          dark:focus:border-primary-dark
-          bg-search-bg
-          dark:bg-search-bg-dark
-          text-foreground
-          dark:text-dark-foreground
-          appearance-none   /* Remove seta padrão do select no Chrome, Safari, etc. */
           ${isError ? "!border-red-500" : ""}
         `}
       >
-        {/* Placeholder como primeira opção "desabilitada" */}
-        <option value="" disabled hidden>
-          {placeholder}
-        </option>
-
-        {/* Renderiza as opções */}
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-
-      {/* Se quiser inserir um ícone de seta customizado, pode usar algo como */}
-      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-        {/* ícone de seta, ex: Font Awesome ou HeroIcons */}
-        <svg
-          className="w-4 h-4"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-          aria-hidden="true"
+        <span
+          className={`
+            mr-2
+            ${!selectedLabel ? "text-gray-400" : ""}
+          `}
         >
-          <path
-            fillRule="evenodd"
-            d="M10 3a1 1 0 0 1 .832.445l5 7A1 1 0 0 1 14 12H6a1 1 0 0 1-.832-1.555l5-7A1 1 0 0 1 10 3zm0 2.276L7.175 10h5.65L10 5.276z"
-            clipRule="evenodd"
-          />
-        </svg>
-      </span>
+          {displayText}
+        </span>
+
+        {/* Ícone seta (chevron), gira 180° se aberto */}
+        <span
+          className={`
+            transition-transform duration-200
+            text-gray-400
+            ${isOpen ? "rotate-180" : ""}
+          `}
+        >
+          {/* Heroicon: Chevron Down */}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+            stroke="currentColor"
+            className="w-4 h-4"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M6 9l6 6 6-6"
+            />
+          </svg>
+        </span>
+      </div>
+
+      {/* Dropdown */}
+      {isOpen && (
+        <div
+          className={`
+            absolute left-0
+            z-10 mt-1
+            min-w-full   /* pelo menos a largura do 'botão' */
+            w-max        /* expande se tiver item maior */
+            bg-search-bg dark:bg-search-bg-dark
+            border dark:border-search-border-dark
+            rounded shadow-lg
+            py-1
+            origin-top
+            animate-dropdown-open
+          `}
+        >
+          {options.map((opt) => (
+            <div
+              key={opt.value}
+              onClick={() => handleOptionClick(opt.value)}
+              className={`
+                px-4 py-2
+                text-sm
+                text-foreground dark:text-dark-foreground
+                hover:bg-gray-100 dark:hover:bg-gray-700
+                cursor-pointer
+                whitespace-nowrap  /* previne quebra e força expandir se necessário */
+                ${opt.value === value ? "font-semibold" : ""}
+              `}
+            >
+              {opt.label}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

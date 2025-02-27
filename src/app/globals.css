@@ -36,3 +36,22 @@ select:-webkit-autofill:focus {
   color: inherit !important;
   /* Se quiser ajustar cor da borda, use border: ... !important; */
 }
+
+/* 
+  Animação customizada para dropdown 
+  (fade in + scaleY).
+*/
+@keyframes dropdown-open {
+  0% {
+    opacity: 0;
+    transform: scaleY(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+.animate-dropdown-open {
+  @apply animate-[dropdown-open_0.15s_ease-out_forwards];
+}

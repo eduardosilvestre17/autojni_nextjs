@@ -183,7 +183,7 @@ export default function ProdutoPage() {
   const [produtoGPSR, setProdutoGPSR] = useState(false);
   const [destaque, setDestaque] = useState(false);
   const [novidade, setNovidade] = useState(false);
-  const [estado, setEstado] = useState("novo");
+  const [estado, setEstado] = useState("");
   const [categorias, setCategorias] = useState("");
   const [marcas, setMarcas] = useState("");
   const [etiquetas, setEtiquetas] = useState("");
@@ -713,6 +713,7 @@ export default function ProdutoPage() {
     return (
       <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {/* Peso */}
           <div>
             <label className="font-medium block mb-1">
               Peso (Kg) <span className="text-red-500">*</span>
@@ -727,6 +728,8 @@ export default function ProdutoPage() {
               isError={fieldErrors.includes("peso")}
             />
           </div>
+
+          {/* Medidas */}
           <div>
             <label className="font-medium block mb-1">Medidas</label>
             <SearchInput
@@ -736,6 +739,8 @@ export default function ProdutoPage() {
               onChange={setMedidas}
             />
           </div>
+
+          {/* Stock */}
           <div>
             <label className="font-medium block mb-1">Stock</label>
             <SearchInput
@@ -746,6 +751,8 @@ export default function ProdutoPage() {
               onChange={setStock}
             />
           </div>
+
+          {/* Quantidade Mínima */}
           <div>
             <label className="font-medium block mb-1">Qtd. mínima</label>
             <SearchInput
@@ -756,6 +763,8 @@ export default function ProdutoPage() {
               onChange={setQtdMinima}
             />
           </div>
+
+          {/* Unidade */}
           <div>
             <label className="font-medium block mb-1">Unidade</label>
             <SearchInput
@@ -765,6 +774,8 @@ export default function ProdutoPage() {
               onChange={setUnidade}
             />
           </div>
+
+          {/* Taxa de imposto */}
           <div>
             <label className="font-medium block mb-1">Taxa de imposto</label>
             <SearchInput
@@ -774,15 +785,20 @@ export default function ProdutoPage() {
               onChange={setTaxaImposto}
             />
           </div>
+
+          {/* Estado (SelectInput) */}
           <div>
             <label className="font-medium block mb-1">Estado</label>
             <SelectInput
-              options={estadoOptions}
-              value={estado}
-              onChange={setEstado}
+              options={estadoOptions} // Array de { label, value }
+              value={estado} // Valor selecionado
+              onChange={setEstado} // Função para atualizar o estado
               placeholder="Selecione o estado..."
+              className="w-full"
             />
           </div>
+
+          {/* Categorias */}
           <div>
             <label className="font-medium block mb-1">Categorias</label>
             <SearchInput
@@ -792,6 +808,8 @@ export default function ProdutoPage() {
               onChange={setCategorias}
             />
           </div>
+
+          {/* Marcas */}
           <div>
             <label className="font-medium block mb-1">Marcas</label>
             <SearchInput
@@ -801,6 +819,8 @@ export default function ProdutoPage() {
               onChange={setMarcas}
             />
           </div>
+
+          {/* Etiquetas */}
           <div>
             <label className="font-medium block mb-1">Etiquetas</label>
             <SearchInput
@@ -810,6 +830,8 @@ export default function ProdutoPage() {
               onChange={setEtiquetas}
             />
           </div>
+
+          {/* Código de barras */}
           <div>
             <label className="font-medium block mb-1">Código de barras</label>
             <SearchInput
@@ -820,6 +842,8 @@ export default function ProdutoPage() {
             />
           </div>
         </div>
+
+        {/* Checkboxes */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
           <CheckboxInput
             label="Vendas extra stock"
