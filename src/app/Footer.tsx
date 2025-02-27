@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import fundosEApoios from "@/app/images/footer/fundos_e_apoios.png"; // Import direto
+import { SearchInput } from "@/components/SearchInput"; // Import do seu componente
 
 export default function Footer() {
   return (
@@ -17,22 +18,25 @@ export default function Footer() {
             Não deixe o seu email sem revisão! Subscreva-se à nossa Newsletter e
             mantenha-o tão afinado como o seu carro.
           </p>
+
+          {/* Formulário de Newsletter usando o SearchInput como campo de email */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              // Lógica para subscrição
+              // Lógica para subscrição da Newsletter
+              alert("Obrigado por subscrever!");
             }}
             className="flex flex-col sm:flex-row justify-center items-center gap-2"
           >
             <label htmlFor="newsletter-email" className="sr-only">
               Seu Email
             </label>
-            <input
+            <SearchInput
               type="email"
-              id="newsletter-email"
               placeholder="Insira o seu email"
-              className="px-4 py-2 w-full sm:w-auto border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-myOrange"
-              required
+              required={true}
+              withIcon={false} // Se quiser o ícone de "lupa", coloque true
+              className="w-full sm:w-auto" // Classes extras se desejar
             />
             <button
               type="submit"

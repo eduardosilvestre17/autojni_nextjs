@@ -1,5 +1,11 @@
 "use client";
-import { useState, ChangeEvent, FocusEvent, KeyboardEvent } from "react";
+import {
+  useState,
+  ChangeEvent,
+  FocusEvent,
+  KeyboardEvent,
+  useEffect,
+} from "react";
 
 interface SearchInputProps {
   placeholder?: string;
@@ -10,7 +16,7 @@ interface SearchInputProps {
   onChange?: (newValue: string) => void;
   isError?: boolean;
   required?: boolean;
-  onKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void; // ADICIONE ESTA PROP
+  onKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void;
 }
 
 export function SearchInput({
@@ -27,12 +33,15 @@ export function SearchInput({
   const [inputValue, setInputValue] = useState(value);
   const [localError, setLocalError] = useState(isError);
 
-  if (value !== inputValue) {
+  // Se a prop "value" mudar externamente, atualiza estado local
+  useEffect(() => {
     setInputValue(value);
-  }
-  if (isError !== localError) {
+  }, [value]);
+
+  // Se a prop "isError" mudar externamente, atualiza estado local
+  useEffect(() => {
     setLocalError(isError);
-  }
+  }, [isError]);
 
   function handleInputChange(e: ChangeEvent<HTMLInputElement>) {
     setInputValue(e.target.value);
@@ -40,16 +49,12 @@ export function SearchInput({
   }
 
   function handleFocus(e: FocusEvent<HTMLInputElement>) {
+    // Ao focar, removemos o estado de erro local
     setLocalError(false);
   }
 
   return (
-    <div
-      className={`relative ${className}`}
-      onClick={() => {
-        setLocalError(false);
-      }}
-    >
+    <div className={`relative ${className}`}>
       <input
         type={type}
         placeholder={placeholder}
@@ -57,7 +62,7 @@ export function SearchInput({
         value={inputValue}
         onChange={handleInputChange}
         onFocus={handleFocus}
-        onKeyDown={onKeyDown} // USE A NOVA PROP
+        onKeyDown={onKeyDown}
         className={`
           w-full 
           border 
@@ -85,10 +90,8 @@ export function SearchInput({
             right-2 
             top-1/2 
             -translate-y-1/2
-            text-foreground 
-            dark:text-dark-foreground
-            hover:text-primary-dark 
-            dark:hover:text-primary
+            text-gray-700 dark:text-gray-300
+            hover:text-myOrange
             transition-colors
           "
         >

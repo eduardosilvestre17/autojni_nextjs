@@ -229,27 +229,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* NEWSLETTER */}
-      <section className="bg-primary-dark dark:bg-primary py-12 px-4 md:px-8 text-white">
-        <div className="max-w-5xl mx-auto text-center">
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">
-            Receba nossas novidades
-          </h2>
-          <p className="mb-8">
-            Inscreva-se na nossa newsletter e não perca nenhuma oferta!
-          </p>
-          <div className="max-w-md mx-auto flex flex-col md:flex-row gap-4">
-            <input
-              type="email"
-              placeholder="Seu e-mail"
-              className="flex-1 px-4 py-3 rounded-md text-foreground
-                         bg-white text-sm focus:outline-none focus:ring-2 focus:ring-myOrange"
-            />
-            <PrimaryButton>Subscrever</PrimaryButton>
-          </div>
-        </div>
-      </section>
     </main>
   );
 }
