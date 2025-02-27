@@ -2,9 +2,6 @@
 
 import React, { useState } from "react";
 
-// Se estiver usando Font Awesome, lembre de importar o CSS em algum lugar global:
-// ex.: via <Head> ou _app.tsx:  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-
 export interface Product {
   id: string;
   titulo: string;
@@ -13,7 +10,7 @@ export interface Product {
   imagens: string[];
   isNew?: boolean;
   inStock?: boolean;
-  // Adicione outras propriedades, se precisar
+  // Outras propriedades se precisar
 }
 
 interface ProductCardProps {
@@ -21,24 +18,25 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const {
-    id,
-    titulo,
-    precoPrincipal,
-    imagens,
-    isNew = false,
-    inStock = true,
-  } = product;
+  const { id, titulo, precoPrincipal, imagens, isNew = false } = product;
 
   const imageSrc = imagens?.[0] || "/images/placeholder.jpg";
   const price = Number(precoPrincipal);
 
-  // Animação do coração
+  // Estados para animações
   const [explodeHearts, setExplodeHearts] = useState(false);
+  const [iconPop, setIconPop] = useState(false);
 
+  // Clique no coração
   function handleWishlistClick() {
+    // Dispara explosão + anima pop
     setExplodeHearts(true);
+    setIconPop(true);
+
+    // Desliga a explosão após 1s
     setTimeout(() => setExplodeHearts(false), 1000);
+    // Desliga o pop após 0.6s
+    setTimeout(() => setIconPop(false), 600);
   }
 
   return (
@@ -50,26 +48,26 @@ export default function ProductCard({ product }: ProductCardProps) {
         rounded
         bg-white dark:bg-gray-800
         
-        // Leve aumento (1%) no hover
+        // Leve aumento no hover
         transition-transform transform-gpu
         hover:scale-[1.01]
 
-        // Sombra grande no modo claro
+        // Sombra grande (claro)
         hover:shadow-2xl
-        // Sombra "glow" laranja no modo escuro
+        // Sombra laranja (escuro)
         dark:hover:shadow-[0_0_20px_0_rgba(249,175,34,0.5)]
       `}
-      style={{ overflow: "visible" }} // Para não cortar a sombra
+      style={{ overflow: "visible" }} // Permite a sombra do card e corações escaparem
     >
-      <div className="p-4 overflow-hidden">
-        {/* Selinho "Novo", se precisar */}
+      <div className="p-4 flex flex-col h-full">
+        {/* Se "Novo", exibe badge */}
         {isNew && (
           <span className="absolute top-2 left-2 bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded z-10">
             Novo
           </span>
         )}
 
-        {/* Imagem do produto */}
+        {/* Imagem */}
         <div className="mb-3">
           <img
             src={imageSrc}
@@ -78,92 +76,126 @@ export default function ProductCard({ product }: ProductCardProps) {
           />
         </div>
 
-        {/* Título */}
-        <h2 className="text-sm font-semibold text-foreground dark:text-dark-foreground mb-1 line-clamp-2">
+        {/* Título (fixa altura p/ 2 linhas) */}
+        <h2
+          className="text-sm font-semibold text-foreground dark:text-dark-foreground mb-1 line-clamp-2"
+          style={{ minHeight: "2.8em" }} // ~2 linhas de 1.4em cada
+        >
           {titulo}
         </h2>
 
         {/* Preço */}
-        <p className="text-lg font-bold text-primary dark:text-myOrange mb-1">
+        <p className="text-lg font-bold text-primary dark:text-myOrange mb-2">
           € {price.toFixed(2)}
         </p>
 
-        {/* Contêiner dos botões: "items-stretch" para ter mesma altura */}
-        <div className="flex items-stretch gap-4 mt-auto">
-          {/* Botão de Carrinho */}
-          <button
-            className={`
-              flex-1
-              flex items-center justify-center gap-2
-              text-sm font-medium
-              px-4 py-2
-              rounded
-              bg-primary dark:bg-myOrange text-white
-              hover:bg-primary-dark dark:hover:bg-myOrange-dark
-              transition-colors
-            `}
-          >
-            {/* Ícone de carrinho (FontAwesome) */}
-            <i className="fa-solid fa-cart-shopping"></i>
-            Carrinho
-          </button>
+        {/* Botões => "items-stretch" p/ mesma altura */}
+        <div className="mt-auto">
+          <div className="flex items-stretch gap-4">
+            {/* Botão de Carrinho (flex-1 => ocupa resto da linha) */}
+            <button
+              className={`
+                flex-1 flex items-center justify-center gap-2
+                text-sm font-medium
+                px-4 py-2
+                rounded
+                bg-primary dark:bg-myOrange
+                text-white
+                hover:bg-primary-dark dark:hover:bg-myOrange-dark
+                transition-colors
+              `}
+            >
+              <i className="fa-solid fa-cart-shopping"></i>
+              Carrinho
+            </button>
 
-          {/* Wishlist (coração) - Mesma altura do carrinho */}
-          <div
-            className={`
-              relative
-              flex items-center justify-center
-              px-4 py-2
-              border border-gray-200 dark:border-gray-700
-              rounded
-              hover:bg-gray-100 dark:hover:bg-gray-700
-              transition-colors
-              overflow-hidden
-            `}
-          >
+            {/* Botão de Wishlist => sem overflow-hidden para corações escaparem */}
             <button
               onClick={handleWishlistClick}
               title="Adicionar à Wishlist"
-              className="text-red-500"
+              className={`
+                relative
+                px-4 py-2
+                border border-gray-200 dark:border-gray-700
+                rounded
+                hover:bg-gray-100 dark:hover:bg-gray-700
+                transition-colors
+                flex items-center justify-center
+              `}
+              style={{ overflow: "visible" }} // corações podem sair
             >
-              {/* Ícone coração (FontAwesome) */}
-              <i className="fa-solid fa-heart"></i>
-            </button>
+              {/* Ícone coração (FontAwesome) com pop */}
+              <i
+                className={`
+                  fa-solid fa-heart text-red-500
+                  ${iconPop ? "animate-pop" : ""}
+                `}
+              />
 
-            {/* Explosão de corações */}
-            {explodeHearts && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="relative">
-                  <span className="absolute w-4 h-4 text-red-500 animate-heart-burst">
-                    ♥
-                  </span>
-                  <span className="absolute w-4 h-4 text-red-500 animate-heart-burst2">
-                    ♥
-                  </span>
-                  <span className="absolute w-4 h-4 text-red-500 animate-heart-burst3">
-                    ♥
-                  </span>
+              {/* Explosão de corações (5 direções) */}
+              {explodeHearts && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="relative">
+                    <span className="absolute text-red-500 animate-heart-burst1">
+                      ♥
+                    </span>
+                    <span className="absolute text-red-500 animate-heart-burst2">
+                      ♥
+                    </span>
+                    <span className="absolute text-red-500 animate-heart-burst3">
+                      ♥
+                    </span>
+                    <span className="absolute text-red-500 animate-heart-burst4">
+                      ♥
+                    </span>
+                    <span className="absolute text-red-500 animate-heart-burst5">
+                      ♥
+                    </span>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Animações dos corações */}
+      {/* Styles: animação "pop" do ícone + 5 direções de corações */}
       <style jsx>{`
-        @keyframes heartBurst {
+        /* Pop do ícone de wishlist */
+        @keyframes pop {
+          0% {
+            transform: scale(1);
+          }
+          30% {
+            transform: scale(1.4);
+          }
+          50% {
+            transform: scale(0.9);
+          }
+          70% {
+            transform: scale(1.1);
+          }
+          100% {
+            transform: scale(1);
+          }
+        }
+        .animate-pop {
+          animation: pop 0.6s ease-out forwards;
+        }
+
+        /* Explosão de corações (1s, 5 direções) */
+        @keyframes heartBurst1 {
           0% {
             opacity: 0;
             transform: scale(0) translate(0, 0);
           }
           20% {
             opacity: 1;
-            transform: scale(1.3) translate(0, 0);
+            transform: scale(1.2) translate(0, 0);
           }
           100% {
             opacity: 0;
-            transform: scale(0.8) translate(-25px, -40px) rotate(360deg);
+            transform: scale(1) translate(-40px, -10px) rotate(540deg);
           }
         }
         @keyframes heartBurst2 {
@@ -177,7 +209,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           }
           100% {
             opacity: 0;
-            transform: scale(1) translate(25px, -35px) rotate(-360deg);
+            transform: scale(1) translate(40px, -10px) rotate(-540deg);
           }
         }
         @keyframes heartBurst3 {
@@ -187,21 +219,56 @@ export default function ProductCard({ product }: ProductCardProps) {
           }
           20% {
             opacity: 1;
-            transform: scale(1.1) translate(0, 0);
+            transform: scale(1.2) translate(0, 0);
           }
           100% {
             opacity: 0;
-            transform: scale(0.9) translate(0, -45px) rotate(360deg);
+            transform: scale(1) translate(-20px, -40px) rotate(540deg);
           }
         }
-        .animate-heart-burst {
-          animation: heartBurst 0.8s forwards ease-out;
+        @keyframes heartBurst4 {
+          0% {
+            opacity: 0;
+            transform: scale(0) translate(0, 0);
+          }
+          20% {
+            opacity: 1;
+            transform: scale(1.2) translate(0, 0);
+          }
+          100% {
+            opacity: 0;
+            transform: scale(1) translate(20px, -40px) rotate(-540deg);
+          }
+        }
+        @keyframes heartBurst5 {
+          0% {
+            opacity: 0;
+            transform: scale(0) translate(0, 0);
+          }
+          20% {
+            opacity: 1;
+            transform: scale(1.2) translate(0, 0);
+          }
+          100% {
+            opacity: 0;
+            transform: scale(1) translate(0, -50px) rotate(540deg);
+          }
+        }
+
+        .animate-heart-burst1 {
+          animation: heartBurst1 0.5s forwards ease-out;
         }
         .animate-heart-burst2 {
-          animation: heartBurst2 0.8s forwards ease-out;
+          animation: heartBurst2 0.5s forwards ease-out;
         }
         .animate-heart-burst3 {
-          animation: heartBurst3 0.8s forwards ease-out;
+          animation: heartBurst3 0.5s forwards ease-out;
+        }
+        .animate-heart-burst4 {
+          animation: heartBurst4 0.5s forwards ease-out;
+        }
+        .animate-heart-burst5 {
+          animation: heartBurst5 0.5s forwards ease-out;
         }
       `}</style>
     </div>
