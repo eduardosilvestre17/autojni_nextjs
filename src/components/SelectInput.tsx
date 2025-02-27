@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, MouseEvent } from "react";
+import React, { useState, useRef, useEffect } from "react";
 
 interface SelectInputOption {
   label: string;
@@ -17,6 +17,11 @@ interface SelectInputProps {
   className?: string;
 }
 
+/**
+ * SelectInput
+ * - Botão sempre w-full (ocupa todo espaço do container)
+ * - Dropdown com minWidth = maior opção, para não "encolher".
+ */
 export function SelectInput({
   options,
   value,
@@ -26,39 +31,54 @@ export function SelectInput({
   required = false,
   className = "",
 }: SelectInputProps) {
-  // Estado de aberto/fechado
   const [isOpen, setIsOpen] = useState(false);
+  const [maxOptionWidth, setMaxOptionWidth] = useState(0);
 
-  // Referência para capturar clique fora
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Alterna abrir/fechar
-  const toggleDropdown = (e?: MouseEvent<HTMLDivElement>) => {
-    setIsOpen((prev) => !prev);
-  };
+  const measureRef = useRef<HTMLDivElement>(null);
 
   // Fecha ao clicar fora
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent | globalThis.MouseEvent) => {
+    function handleClickOutside(event: globalThis.MouseEvent) {
       if (
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target as Node)
       ) {
         setIsOpen(false);
       }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
+    }
+    document.addEventListener("mousedown", handleClickOutside as any);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside as any);
     };
   }, []);
 
+  // Mede a maior largura das opções
+  useEffect(() => {
+    if (!measureRef.current) return;
+
+    let largest = 0;
+    // Seleciona todos os elementos marcados com [data-measure]
+    const items =
+      measureRef.current.querySelectorAll<HTMLElement>("[data-measure]");
+    items.forEach((item) => {
+      const w = item.offsetWidth;
+      if (w > largest) largest = w;
+    });
+
+    setMaxOptionWidth(largest);
+  }, [options]);
+
+  // Alterna abrir/fechar
+  function toggleDropdown() {
+    setIsOpen((prev) => !prev);
+  }
+
   // Seleciona opção
-  const handleOptionClick = (optionValue: string) => {
+  function handleOptionClick(optionValue: string) {
     if (onChange) onChange(optionValue);
     setIsOpen(false);
-  };
+  }
 
   // Label da opção selecionada
   const selectedLabel = options.find((opt) => opt.value === value)?.label || "";
@@ -66,21 +86,61 @@ export function SelectInput({
   const displayText = selectedLabel || placeholder;
 
   return (
-    <div
-      ref={dropdownRef}
-      className={`relative inline-block text-left ${className}`}
-    >
-      {/* Botão (label + ícone) */}
+    <div ref={dropdownRef} className={`relative w-full text-left ${className}`}>
+      {/* 
+        "Fantasma" para medir largura das opções
+        Nota: não aplicamos w-full nele, pois queremos medir o tamanho natural
+      */}
+      <div
+        ref={measureRef}
+        className="absolute invisible -z-10 top-0 left-0 whitespace-nowrap"
+      >
+        {options.map((opt) => (
+          <div
+            key={opt.value}
+            data-measure
+            className={`
+              inline-flex items-center
+              px-4 py-2
+              border dark:border-search-border-dark
+              rounded
+              bg-search-bg dark:bg-search-bg-dark
+              text-foreground dark:text-dark-foreground
+            `}
+          >
+            <span className="mr-2">{opt.label}</span>
+            <span className="text-gray-400">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                stroke="currentColor"
+                className="w-4 h-4"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 9l6 6 6-6"
+                />
+              </svg>
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* BOTÃO Select - ocupa toda a largura do container */}
       <div
         onClick={toggleDropdown}
         className={`
           flex justify-between items-center
+          w-full
+          px-4 py-2
           border dark:border-search-border-dark
           rounded
-          px-4 py-2
-          cursor-pointer
           bg-search-bg dark:bg-search-bg-dark
           text-foreground dark:text-dark-foreground
+          cursor-pointer
           select-none
           focus:outline-none
           ${isError ? "!border-red-500" : ""}
@@ -94,16 +154,15 @@ export function SelectInput({
         >
           {displayText}
         </span>
-
         {/* Ícone seta (chevron), gira 180° se aberto */}
         <span
           className={`
-            transition-transform duration-200
             text-gray-400
+            transition-transform
+            duration-200
             ${isOpen ? "rotate-180" : ""}
           `}
         >
-          {/* Heroicon: Chevron Down */}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
@@ -121,21 +180,23 @@ export function SelectInput({
         </span>
       </div>
 
-      {/* Dropdown */}
+      {/* DROPDOWN */}
       {isOpen && (
         <div
           className={`
             absolute left-0
             z-10 mt-1
-            min-w-full   /* pelo menos a largura do 'botão' */
-            w-max        /* expande se tiver item maior */
-            bg-search-bg dark:bg-search-bg-dark
-            border dark:border-search-border-dark
-            rounded shadow-lg
             py-1
+            border dark:border-search-border-dark
+            bg-search-bg dark:bg-search-bg-dark
+            rounded shadow-lg
             origin-top
             animate-dropdown-open
           `}
+          style={{
+            // Garante que o menu não fique menor que o maior item
+            minWidth: maxOptionWidth > 0 ? maxOptionWidth : undefined,
+          }}
         >
           {options.map((opt) => (
             <div
@@ -147,7 +208,7 @@ export function SelectInput({
                 text-foreground dark:text-dark-foreground
                 hover:bg-gray-100 dark:hover:bg-gray-700
                 cursor-pointer
-                whitespace-nowrap  /* previne quebra e força expandir se necessário */
+                whitespace-nowrap
                 ${opt.value === value ? "font-semibold" : ""}
               `}
             >

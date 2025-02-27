@@ -100,7 +100,7 @@ export default function LojaPage() {
             ]}
             value={orderBy}
             onChange={(val) => setOrderBy(val)}
-            placeholder="Selecionar..."
+            placeholder="Selecionar"
           />
         </div>
       </div>
