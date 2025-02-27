@@ -47,6 +47,19 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
             >
               Produtos
             </Link>
+            <Link
+              href="/clientes"
+              className="
+                block px-3 py-2 
+                rounded 
+                hover:bg-myOrange 
+                dark:hover:bg-myOrange-dark
+                transition-colors 
+                cursor-pointer
+              "
+            >
+              Clientes
+            </Link>
           </nav>
 
           <button
@@ -206,6 +219,19 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
                 "
               >
                 Produtos
+              </Link>
+              <Link
+                href="/clientes"
+                className="
+                block px-3 py-2 
+                rounded 
+                hover:bg-myOrange 
+                dark:hover:bg-myOrange-dark
+                transition-colors 
+                cursor-pointer
+              "
+              >
+                Clientes
               </Link>
             </nav>
 
