@@ -17,6 +17,17 @@ interface ProductCardProps {
   product: Product;
 }
 
+// Função auxiliar para sortear um número inteiro entre min e max (inclusive)
+function randomBetween(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+interface HeartPosition {
+  x: number;
+  y: number;
+  rot: number;
+}
+
 export default function ProductCard({ product }: ProductCardProps) {
   const { id, titulo, precoPrincipal, imagens, isNew = false } = product;
 
@@ -27,10 +38,13 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [explodeHearts, setExplodeHearts] = useState(false);
   const [iconPop, setIconPop] = useState(false);
 
-  // Referência para armazenar timeouts (para poder limpar em cada clique)
+  // Guarda as posições/rotações dos corações
+  const [heartsPositions, setHeartsPositions] = useState<HeartPosition[]>([]);
+
+  // Referência para armazenar timeouts
   const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
 
-  // Limpa timeouts no desmontar do componente (boas práticas)
+  // Limpa timeouts no desmontar do componente
   useEffect(() => {
     return () => {
       timeoutsRef.current.forEach(clearTimeout);
@@ -39,15 +53,42 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   // Clique no coração
   function handleWishlistClick() {
-    // Limpa eventuais timeouts em aberto (caso o usuário clique várias vezes rápido)
+    // Limpa eventuais timeouts pendentes
     timeoutsRef.current.forEach(clearTimeout);
     timeoutsRef.current = [];
 
-    // Reinicia o estado para garantir que a animação possa recomeçar do zero
+    // Reinicia estados de animação
     setExplodeHearts(false);
     setIconPop(false);
 
-    // Dispara novamente a animação de forma assíncrona (0 ms)
+    // Gera posições/rotações aleatórias para cada um dos 8 "setores" de 45 graus
+    const newHearts = Array.from({ length: 8 }, (_, i) => {
+      // Cada zona: i*45 até (i+1)*45
+      const minAngle = i * 45;
+      const maxAngle = (i + 1) * 45;
+      // Ângulo aleatório dentro da zona
+      const angle = Math.random() * (maxAngle - minAngle) + minAngle;
+      // Distância aleatória (entre 40 e 60 px)
+      const distance = randomBetween(40, 60);
+      // Converte ângulo para radianos
+      const rad = (angle * Math.PI) / 180;
+
+      // Define deslocamento (x e y)
+      // Ângulo 0° => para a direita (Eixo X).
+      // Precisamos injetar a componente Y negativa p/ ir "para cima" quando sin é positivo.
+      const x = distance * Math.cos(rad);
+      const y = -distance * Math.sin(rad);
+
+      // Rotação final (entre 360° e 720°)
+      const rot = randomBetween(360, 720);
+
+      return { x, y, rot };
+    });
+
+    // Guarda posições no state
+    setHeartsPositions(newHearts);
+
+    // Dispara animações (assíncrono para "reiniciar do zero")
     timeoutsRef.current.push(
       setTimeout(() => {
         setExplodeHearts(true);
@@ -155,25 +196,25 @@ export default function ProductCard({ product }: ProductCardProps) {
                 `}
               />
 
-              {/* Explosão de corações (5 direções) */}
+              {/* Explosão de corações (8 direções aleatórias) */}
               {explodeHearts && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="relative">
-                    <span className="absolute text-red-500 animate-heart-burst1">
-                      ♥
-                    </span>
-                    <span className="absolute text-red-500 animate-heart-burst2">
-                      ♥
-                    </span>
-                    <span className="absolute text-red-500 animate-heart-burst3">
-                      ♥
-                    </span>
-                    <span className="absolute text-red-500 animate-heart-burst4">
-                      ♥
-                    </span>
-                    <span className="absolute text-red-500 animate-heart-burst5">
-                      ♥
-                    </span>
+                    {heartsPositions.map((heart, index) => (
+                      <span
+                        key={index}
+                        className="absolute text-red-500 heart-burst"
+                        style={
+                          {
+                            "--tx": `${heart.x}px`,
+                            "--ty": `${heart.y}px`,
+                            "--rot": `${heart.rot}deg`,
+                          } as React.CSSProperties
+                        }
+                      >
+                        ♥
+                      </span>
+                    ))}
                   </div>
                 </div>
               )}
@@ -182,7 +223,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
       </div>
 
-      {/* Styles: animação "pop" do ícone + 5 direções de corações */}
+      {/* Styles: animação "pop" do ícone + explosão (8 corações a partir do centro) */}
       <style jsx>{`
         /* Pop do ícone de wishlist */
         @keyframes pop {
@@ -206,92 +247,25 @@ export default function ProductCard({ product }: ProductCardProps) {
           animation: pop 0.6s ease-out forwards;
         }
 
-        /* Explosão de corações (1s, 5 direções) */
-        @keyframes heartBurst1 {
+        /* Explosão de corações usando variáveis CSS (x, y, rot) */
+        @keyframes heartBurst {
           0% {
             opacity: 0;
-            transform: scale(0) translate(0, 0);
+            transform: scale(0) translate(0, 0) rotate(0deg);
           }
           20% {
             opacity: 1;
-            transform: scale(1.2) translate(0, 0);
+            transform: scale(1.2) translate(0, 0) rotate(0deg);
           }
           100% {
             opacity: 0;
-            transform: scale(1) translate(-40px, -10px) rotate(540deg);
-          }
-        }
-        @keyframes heartBurst2 {
-          0% {
-            opacity: 0;
-            transform: scale(0) translate(0, 0);
-          }
-          20% {
-            opacity: 1;
-            transform: scale(1.2) translate(0, 0);
-          }
-          100% {
-            opacity: 0;
-            transform: scale(1) translate(40px, -10px) rotate(-540deg);
-          }
-        }
-        @keyframes heartBurst3 {
-          0% {
-            opacity: 0;
-            transform: scale(0) translate(0, 0);
-          }
-          20% {
-            opacity: 1;
-            transform: scale(1.2) translate(0, 0);
-          }
-          100% {
-            opacity: 0;
-            transform: scale(1) translate(-20px, -40px) rotate(540deg);
-          }
-        }
-        @keyframes heartBurst4 {
-          0% {
-            opacity: 0;
-            transform: scale(0) translate(0, 0);
-          }
-          20% {
-            opacity: 1;
-            transform: scale(1.2) translate(0, 0);
-          }
-          100% {
-            opacity: 0;
-            transform: scale(1) translate(20px, -40px) rotate(-540deg);
-          }
-        }
-        @keyframes heartBurst5 {
-          0% {
-            opacity: 0;
-            transform: scale(0) translate(0, 0);
-          }
-          20% {
-            opacity: 1;
-            transform: scale(1.2) translate(0, 0);
-          }
-          100% {
-            opacity: 0;
-            transform: scale(1) translate(0, -50px) rotate(540deg);
+            transform: scale(1) translate(var(--tx), var(--ty))
+              rotate(var(--rot));
           }
         }
 
-        .animate-heart-burst1 {
-          animation: heartBurst1 0.5s forwards ease-out;
-        }
-        .animate-heart-burst2 {
-          animation: heartBurst2 0.5s forwards ease-out;
-        }
-        .animate-heart-burst3 {
-          animation: heartBurst3 0.5s forwards ease-out;
-        }
-        .animate-heart-burst4 {
-          animation: heartBurst4 0.5s forwards ease-out;
-        }
-        .animate-heart-burst5 {
-          animation: heartBurst5 0.5s forwards ease-out;
+        .heart-burst {
+          animation: heartBurst 0.6s forwards ease-out;
         }
       `}</style>
     </div>
