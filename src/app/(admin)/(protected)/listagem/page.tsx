@@ -125,12 +125,20 @@ export default function ArticlesPage() {
   // Se os dados completos estiverem carregados, usa-os; senão, usa os iniciais
   const articlesToFilter = allArticlesLoaded ? fullArticles : initialArticles;
 
-  // Filtro fuzzy pela descrição
+  // Filtro fuzzy pela descrição OU pelo ID
   const filteredArticles = useMemo(() => {
     if (!searchTerm) return articlesToFilter;
-    return articlesToFilter.filter((article) =>
-      matchAllWords(searchTerm, article.description || "")
-    );
+    return articlesToFilter.filter((article) => {
+      // Verifica match na descrição
+      const matchDescription = matchAllWords(
+        searchTerm,
+        article.description || ""
+      );
+      // Verifica match no ID (convertendo para string)
+      const matchId = matchAllWords(searchTerm, String(article.id || ""));
+
+      return matchDescription || matchId;
+    });
   }, [articlesToFilter, searchTerm]);
 
   // Ajusta os valores de "articletype" e "active" para exibir textos amigáveis
@@ -162,7 +170,7 @@ export default function ArticlesPage() {
       <div className="mb-4">
         <input
           type="text"
-          placeholder="Pesquisar por descrição..."
+          placeholder="Pesquisar por ID ou descrição..."
           value={typingSearch}
           onChange={(e) => setTypingSearch(e.target.value)}
           className="border border-search-border-dark p-2 rounded w-full bg-search-bg dark:bg-search-bg-dark text-foreground dark:text-dark-foreground"

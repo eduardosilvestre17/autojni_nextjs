@@ -1,6 +1,7 @@
 // prisma/schema.prisma
+
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -9,11 +10,11 @@ generator client {
 }
 
 model User {
-  id       Int    @id @default(autoincrement())
-  email    String @unique
-  password String
-  name     String?
-  role     String  @default("user")
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String?
+  role      String   @default("user")
   createdAt DateTime @default(now())
 }
 
@@ -57,7 +58,8 @@ model Product {
   descricaoPagina     String?
   metatagsPagina      String?
   especificacoes      String?
-  imagens             String[]
+  // Alterado de String[] para Json? para armazenar array de strings
+  imagens             Json?
+
   createdAt           DateTime @default(now())
 }
-

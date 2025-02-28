@@ -1,0 +1,60 @@
+-- CreateTable
+CREATE TABLE `User` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `email` VARCHAR(191) NOT NULL,
+    `password` VARCHAR(191) NOT NULL,
+    `name` VARCHAR(191) NULL,
+    `role` VARCHAR(191) NOT NULL DEFAULT 'user',
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    UNIQUE INDEX `User_email_key`(`email`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Product` (
+    `id` VARCHAR(191) NOT NULL,
+    `titulo` VARCHAR(191) NOT NULL,
+    `referencia` VARCHAR(191) NOT NULL,
+    `tipoProduto` VARCHAR(191) NULL,
+    `descricaoCurta` VARCHAR(191) NULL,
+    `descricaoCompleta` VARCHAR(191) NULL,
+    `peso` DECIMAL(10, 2) NULL,
+    `hasMedidas` BOOLEAN NOT NULL DEFAULT false,
+    `medidas` VARCHAR(191) NULL,
+    `stock` INTEGER NOT NULL DEFAULT 0,
+    `vendasExtraStock` BOOLEAN NOT NULL DEFAULT false,
+    `unidade` VARCHAR(191) NULL,
+    `taxaImposto` DECIMAL(5, 2) NULL,
+    `qtdMinima` INTEGER NOT NULL DEFAULT 0,
+    `produtoFragil` BOOLEAN NOT NULL DEFAULT false,
+    `permitirUpload` BOOLEAN NOT NULL DEFAULT false,
+    `produtoGPSR` BOOLEAN NOT NULL DEFAULT false,
+    `estado` VARCHAR(191) NULL,
+    `destaque` BOOLEAN NOT NULL DEFAULT false,
+    `novidade` BOOLEAN NOT NULL DEFAULT false,
+    `categorias` VARCHAR(191) NULL,
+    `marcas` VARCHAR(191) NULL,
+    `etiquetas` VARCHAR(191) NULL,
+    `codigoBarras` VARCHAR(191) NULL,
+    `precoCompraSemIva` DECIMAL(10, 2) NULL,
+    `precoCompraComIva` DECIMAL(10, 2) NULL,
+    `precoVendaSemIva` DECIMAL(10, 2) NULL,
+    `precoVendaComIva` DECIMAL(10, 2) NULL,
+    `margemLucro` DECIMAL(10, 2) NULL,
+    `margemRelacional` DECIMAL(10, 2) NULL,
+    `precoPrincipal` DECIMAL(10, 2) NULL,
+    `precoPromocional` DECIMAL(10, 2) NULL,
+    `usarPrecosVariacoes` BOOLEAN NOT NULL DEFAULT false,
+    `variacoes` VARCHAR(191) NULL,
+    `slug` VARCHAR(191) NULL,
+    `tituloPagina` VARCHAR(191) NULL,
+    `descricaoPagina` VARCHAR(191) NULL,
+    `metatagsPagina` VARCHAR(191) NULL,
+    `especificacoes` VARCHAR(191) NULL,
+    `imagens` JSON NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    UNIQUE INDEX `Product_slug_key`(`slug`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
