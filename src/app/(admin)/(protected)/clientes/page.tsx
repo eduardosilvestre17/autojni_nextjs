@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { SearchInput } from "@/components/SearchInput";
+import { PrimaryButton, SecondaryButton } from "@/components/Buttons";
 import { MdClose } from "react-icons/md";
 import { HiCheckCircle, HiXCircle, HiInformationCircle } from "react-icons/hi";
 import AdminTable from "@/components/AdminTableClients";
@@ -27,7 +28,6 @@ function NotificationItem({
   const { id, type, title, message } = notification;
   const [exiting, setExiting] = useState(false);
 
-  // Utiliza as cores definidas no tailwind.config.ts
   let bgColor = "bg-primary dark:bg-primary-dark";
   let Icon = HiInformationCircle;
 
@@ -86,7 +86,12 @@ function NotificationItem({
       <div
         className={`
           flex items-start gap-3
-          w-72 p-4 mb-2 rounded text-white shadow-lg
+          w-72
+          p-4
+          mb-2
+          rounded
+          text-white
+          shadow-lg
           ${bgColor}
           ${exiting ? "animate-slideOut" : "animate-slideIn"}
         `}
@@ -107,9 +112,37 @@ function NotificationItem({
   );
 }
 
-/**
- * Remove acentos e converte a string para lowercase.
- */
+interface ICliente {
+  id: number;
+  name: string;
+  address: string;
+  city: string;
+  zipcode: string;
+  country: string;
+  customertaxid: string;
+  phone1: string; // "Telemovel" na tabela
+  phone2: string;
+  mobilephone: string;
+  fax: string;
+  email: string;
+  webpage: string;
+  vendorcode: number;
+  active: string;
+  entitytype: string;
+  classifcode: string;
+  campaigncode: string;
+  customertype: string;
+  rgdp_allow_dataprocessing_date: string;
+  rgdp_allow_mailing: number;
+  activitysector_id: string;
+  clientmanager: string;
+  exemptionreason_id: string;
+}
+
+interface ICustomersResponse {
+  customers?: Record<string, ICliente>;
+}
+
 function normalizeStr(str: string): string {
   return str
     .normalize("NFD")
@@ -118,190 +151,178 @@ function normalizeStr(str: string): string {
 }
 
 /**
- * Verifica se todas as palavras de `userText` estão contidas em `target`,
- * ignorando acentos e diferenças de case.
+ * Verifica se 'userText' está contido em 'target',
+ * ignorando acentos e case (match parcial).
  */
 function matchAllWords(userText: string, target: string): boolean {
   const words = userText.split(/\s+/).filter(Boolean);
   if (words.length === 0) return true;
   const normTarget = normalizeStr(target);
   for (const w of words) {
-    if (!normTarget.includes(normalizeStr(w))) {
+    const normW = normalizeStr(w);
+    if (!normTarget.includes(normW)) {
       return false;
     }
   }
   return true;
 }
 
-/** Converte "T" em "Ativo" e "F" em "Inativo". */
-function getActiveText(active: string) {
-  return active === "T" ? "Ativo" : active === "F" ? "Inativo" : active;
-}
+export default function ClientesPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
 
-/** Converte "N" em "Normal" e "S" em "Serviço". */
-function getArticleTypeText(type: string) {
-  return type === "N" ? "Normal" : type === "S" ? "Serviço" : type;
-}
-
-export default function ArticlesPage() {
-  // Pesquisa em tempo real (fuzzy)
-  const [typingSearch, setTypingSearch] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-
-  // Dados para carregamento rápido (primeira página) e carregamento completo
-  const [initialArticles, setInitialArticles] = useState<any[]>([]);
-  const [fullArticles, setFullArticles] = useState<any[]>([]);
-  const [allArticlesLoaded, setAllArticlesLoaded] = useState(false);
-  const [totalCount, setTotalCount] = useState(0);
-
-  // Controle de carregamento e erro
+  const [notifications, setNotifications] = useState<INotification[]>([]);
+  const [allClients, setAllClients] = useState<ICliente[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  // Debounce de 300ms para atualizar o searchTerm
+  // Campo de pesquisa que filtra por nome, telemovel, contribuinte
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typingTerm, setTypingTerm] = useState("");
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setSearchTerm(typingSearch);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [typingSearch]);
+    if (status === "unauthenticated") {
+      router.replace("/login");
+    }
+  }, [status, router]);
 
-  /**
-   * Carrega rapidamente apenas a primeira página de artigos (ex: 10 itens).
-   */
-  async function fetchInitialArticles() {
-    setLoading(true);
-    setError("");
+  useEffect(() => {
+    if (status === "authenticated") {
+      carregarTodosClientes();
+    }
+  }, [status]);
+
+  async function carregarTodosClientes() {
     try {
-      const username = "userapi";
-      const password = "1c4a331908e1e5feb96ccba9e82c1b2e8d28f9bb";
+      setLoading(true);
+      const baseUrl = "https://autojni.officegest.com/api";
+      const url = `${baseUrl}/entities/customers?limit=999999`;
 
-      const headers = new Headers();
-      headers.set("Authorization", `Basic ${btoa(`${username}:${password}`)}`);
+      const user = "userapi";
+      const pass = "1c4a331908e1e5feb96ccba9e82c1b2e8d28f9bb";
+      const basicAuth = btoa(`${user}:${pass}`);
 
-      // Busca somente a primeira página (limite 10)
-      const url = `https://autojni.officegest.com/api/stocks/articles?limit=10&offset=0`;
-      const response = await fetch(url, { headers });
-      if (!response.ok) {
-        throw new Error("Erro ao buscar artigos (primeira página)");
+      const res = await fetch(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Basic ${basicAuth}`,
+          Accept: "application/json",
+        },
+      });
+      if (!res.ok) {
+        throw new Error("Falha ao buscar clientes");
       }
 
-      const data = await response.json();
-      setInitialArticles(data.articles || []);
-      setTotalCount(data.total || 0);
-    } catch (err: any) {
-      setError(err.message);
+      const data: ICustomersResponse = await res.json();
+      console.log("Resposta da API:", data);
+
+      if (data.customers) {
+        setAllClients(Object.values(data.customers));
+      } else {
+        setAllClients([]);
+      }
+    } catch (error: any) {
+      addNotification("error", "Erro", error.message || "Falha na requisição");
     } finally {
       setLoading(false);
     }
   }
 
-  /**
-   * Carrega em segundo plano todos os artigos (sem limite),
-   * para permitir pesquisa completa e paginação interna do AdminTable.
-   */
-  async function fetchFullArticles() {
-    try {
-      const username = "userapi";
-      const password = "1c4a331908e1e5feb96ccba9e82c1b2e8d28f9bb";
+  // Debounce de 300ms para atualizar o searchTerm
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchTerm(typingTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [typingTerm]);
 
-      const headers = new Headers();
-      headers.set("Authorization", `Basic ${btoa(`${username}:${password}`)}`);
+  // Filtragem local por nome, telemovel ou contribuinte
+  const filteredClients = useMemo(() => {
+    if (!searchTerm) return allClients;
+    return allClients.filter((cliente) => {
+      const matchName = matchAllWords(searchTerm, cliente.name ?? "");
+      const matchTelemovel = matchAllWords(searchTerm, cliente.phone1 ?? "");
+      const matchContribuinte = matchAllWords(
+        searchTerm,
+        cliente.customertaxid ?? ""
+      );
+      // Inclui o cliente se der match em qualquer um dos 3 campos
+      return matchName || matchTelemovel || matchContribuinte;
+    });
+  }, [allClients, searchTerm]);
 
-      // Carrega todos os artigos
-      const url = `https://autojni.officegest.com/api/stocks/articles?limit=999999&offset=0`;
-      const response = await fetch(url, { headers });
-      if (!response.ok) {
-        throw new Error("Erro ao buscar artigos (completo)");
-      }
-
-      const data = await response.json();
-      setFullArticles(data.articles || []);
-      setAllArticlesLoaded(true);
-    } catch (err) {
-      console.error(err);
-    }
+  function addNotification(
+    type: NotificationType,
+    title: string,
+    message: string
+  ) {
+    const id = Math.random().toString(36).substring(2, 9);
+    setNotifications((prev) => [...prev, { id, type, title, message }]);
   }
 
-  // Carregamento rápido ao montar o componente
-  useEffect(() => {
-    fetchInitialArticles();
-  }, []);
+  function removeNotification(id: string) {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  }
 
-  // Carregamento completo em segundo plano
-  useEffect(() => {
-    fetchFullArticles();
-  }, []);
+  // Mantemos a função, mas não exibimos mais o botão na interface
+  function handleLimpar() {
+    setTypingTerm("");
+    setSearchTerm("");
+  }
 
-  // Se já carregou tudo, usa fullArticles; caso contrário, initialArticles
-  const articlesToFilter = allArticlesLoaded ? fullArticles : initialArticles;
-
-  // Filtro fuzzy pela descrição
-  const filteredArticles = useMemo(() => {
-    if (!searchTerm) return articlesToFilter;
-    return articlesToFilter.filter((article) =>
-      matchAllWords(searchTerm, article.description || "")
-    );
-  }, [articlesToFilter, searchTerm]);
-
-  // Ajusta os valores de "articletype" e "active" para exibir textos amigáveis
-  const processedArticles = useMemo(() => {
-    return filteredArticles.map((article) => ({
-      ...article,
-      articletype: getArticleTypeText(article.articletype),
-      active: getActiveText(article.active),
-    }));
-  }, [filteredArticles]);
-
-  // Definição das colunas para o AdminTable
+  // Definição das colunas da tabela
   const columns = [
     { key: "id", label: "ID" },
-    { key: "description", label: "Descrição" },
-    { key: "articletype", label: "Tipo" },
-    { key: "purchasingprice", label: "Preço Compra" },
-    { key: "sellingprice", label: "Preço Venda" },
-    { key: "active", label: "Ativo" },
-    { key: "brand", label: "Marca" },
-    { key: "stock_quantity", label: "Stock" },
+    { key: "name", label: "Nome" },
+    { key: "email", label: "Email" },
+    { key: "customertaxid", label: "Contribuinte" },
+    { key: "phone1", label: "Telemovel" },
   ];
+
+  if (status === "loading") {
+    return <p>Carregando sessão...</p>;
+  }
 
   return (
     <div className="container max-w-5xl mx-auto px-4 py-6 bg-search-bg rounded shadow dark:bg-search-bg-dark text-foreground dark:text-dark-foreground">
-      <h1 className="text-2xl font-bold mb-4">Lista de Artigos</h1>
-
-      {/* Campo de pesquisa em tempo real */}
-      <div className="mb-4">
-        <input
-          type="text"
-          placeholder="Pesquisar por descrição..."
-          value={typingSearch}
-          onChange={(e) => setTypingSearch(e.target.value)}
-          className="border border-search-border-dark p-2 rounded w-full bg-search-bg dark:bg-search-bg-dark text-foreground dark:text-dark-foreground"
-        />
+      {/* Notificações */}
+      <div className="fixed top-4 right-4 z-50">
+        {notifications.map((notif) => (
+          <NotificationItem
+            key={notif.id}
+            notification={notif}
+            onClose={removeNotification}
+          />
+        ))}
       </div>
 
-      {loading && <p>Carregando...</p>}
-      {error && <p className="text-red-500">Erro: {error}</p>}
+      <h1 className="text-2xl font-bold mb-4">Lista de Clientes</h1>
 
-      {allArticlesLoaded && (
-        <p className="mb-2">Total de artigos: {filteredArticles.length}</p>
-      )}
+      <div className="mb-4 p-4 bg-search-bg rounded dark:bg-search-bg-dark">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div className="col-span-1 sm:col-span-2">
+            <label className="block mb-1 font-semibold">
+              Pesquisa por Nome, Telemovel ou Contribuinte:
+            </label>
+            <SearchInput
+              placeholder="Ex: João, 912345678, 123456789"
+              withIcon={false}
+              value={typingTerm}
+              onChange={setTypingTerm}
+            />
+          </div>
+        </div>
+        {/* Botão "Limpar" removido */}
+      </div>
 
       <div className="w-full overflow-x-auto">
         <AdminTable
           columns={columns}
-          data={processedArticles}
+          data={filteredClients}
           loading={loading}
           rowsPerPage={10}
-          mobileColumnKey="description"
+          mobileColumnKey="name"
         />
       </div>
-
-      {!allArticlesLoaded && (
-        <p className="mt-4 text-sm italic">
-          Carregando todos os artigos em segundo plano...
-        </p>
-      )}
     </div>
   );
 }

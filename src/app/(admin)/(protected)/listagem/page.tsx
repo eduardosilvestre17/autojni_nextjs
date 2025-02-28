@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState, useEffect, useMemo } from "react";
 import AdminTable from "@/components/AdminTableClients";
 
@@ -47,13 +48,13 @@ export default function ArticlesPage() {
   const [initialArticles, setInitialArticles] = useState<any[]>([]);
   const [fullArticles, setFullArticles] = useState<any[]>([]);
   const [allArticlesLoaded, setAllArticlesLoaded] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
 
   // Controle de carregamento e erro
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [totalCount, setTotalCount] = useState(0);
 
-  // Debounce de 300ms para o campo de busca
+  // Debounce de 300ms para atualizar o searchTerm
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearchTerm(typingSearch);
@@ -62,7 +63,7 @@ export default function ArticlesPage() {
   }, [typingSearch]);
 
   /**
-   * Carrega rapidamente apenas a primeira página de artigos (por exemplo, 10 itens).
+   * Carrega rapidamente apenas a primeira página de artigos (ex: 10 itens).
    */
   async function fetchInitialArticles() {
     setLoading(true);
@@ -70,17 +71,13 @@ export default function ArticlesPage() {
     try {
       const username = "userapi";
       const password = "1c4a331908e1e5feb96ccba9e82c1b2e8d28f9bb";
-
       const headers = new Headers();
       headers.set("Authorization", `Basic ${btoa(`${username}:${password}`)}`);
-
-      // Busca somente a primeira página (limite 10)
       const url = `https://autojni.officegest.com/api/stocks/articles?limit=10&offset=0`;
       const response = await fetch(url, { headers });
       if (!response.ok) {
         throw new Error("Erro ao buscar artigos (primeira página)");
       }
-
       const data = await response.json();
       setInitialArticles(data.articles || []);
       setTotalCount(data.total || 0);
@@ -94,43 +91,38 @@ export default function ArticlesPage() {
   /**
    * Carrega em segundo plano todos os artigos (sem limite),
    * para permitir pesquisa completa e paginação interna do AdminTable.
+   * Esse carregamento ocorre sem exibir mensagens extras.
    */
   async function fetchFullArticles() {
     try {
       const username = "userapi";
       const password = "1c4a331908e1e5feb96ccba9e82c1b2e8d28f9bb";
-
       const headers = new Headers();
       headers.set("Authorization", `Basic ${btoa(`${username}:${password}`)}`);
-
-      // Carrega todos os artigos
       const url = `https://autojni.officegest.com/api/stocks/articles?limit=999999&offset=0`;
       const response = await fetch(url, { headers });
       if (!response.ok) {
         throw new Error("Erro ao buscar artigos (completo)");
       }
-
       const data = await response.json();
       setFullArticles(data.articles || []);
       setAllArticlesLoaded(true);
     } catch (err) {
-      // Se der erro no carregamento completo, apenas logamos
-      // (a listagem inicial ainda funciona com a primeira página)
       console.error(err);
     }
   }
 
-  // Carregamento rápido ao montar o componente
+  // Carrega a primeira página ao montar o componente
   useEffect(() => {
     fetchInitialArticles();
   }, []);
 
-  // Carregamento completo em segundo plano
+  // Carrega todos os artigos em segundo plano (sem interromper a experiência do usuário)
   useEffect(() => {
     fetchFullArticles();
   }, []);
 
-  // Se já carregou tudo, usamos `fullArticles`, caso contrário, `initialArticles`
+  // Se os dados completos estiverem carregados, usa-os; senão, usa os iniciais
   const articlesToFilter = allArticlesLoaded ? fullArticles : initialArticles;
 
   // Filtro fuzzy pela descrição
@@ -166,7 +158,7 @@ export default function ArticlesPage() {
     <div className="container max-w-5xl mx-auto px-4 py-6 bg-search-bg rounded shadow dark:bg-search-bg-dark text-foreground dark:text-dark-foreground">
       <h1 className="text-2xl font-bold mb-4">Lista de Artigos</h1>
 
-      {/* Campo de pesquisa em tempo real */}
+      {/* Campo de pesquisa */}
       <div className="mb-4">
         <input
           type="text"
@@ -180,19 +172,6 @@ export default function ArticlesPage() {
       {loading && <p>Carregando...</p>}
       {error && <p className="text-red-500">Erro: {error}</p>}
 
-      {/* Info sobre total de itens retornados ou totalCount se não estiver completo */}
-      <div className="mb-2">
-        {allArticlesLoaded ? (
-          <p>Total de artigos: {filteredArticles.length}</p>
-        ) : (
-          <p>
-            Carregando... Artigos iniciais: {initialArticles.length} / Total:
-            {totalCount}
-          </p>
-        )}
-      </div>
-
-      {/* Tabela usando AdminTableClients */}
       <div className="w-full overflow-x-auto">
         <AdminTable
           columns={columns}
@@ -202,13 +181,6 @@ export default function ArticlesPage() {
           mobileColumnKey="description"
         />
       </div>
-
-      {/* Mensagem enquanto os artigos completos não estão carregados */}
-      {!allArticlesLoaded && (
-        <p className="mt-4 text-sm italic">
-          Carregando todos os artigos em segundo plano...
-        </p>
-      )}
     </div>
   );
 }
