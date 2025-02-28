@@ -58,7 +58,6 @@ model Product {
   descricaoPagina     String?
   metatagsPagina      String?
   especificacoes      String?
-  // Alterado de String[] para Json? para armazenar array de strings
   imagens             Json?
 
   createdAt           DateTime @default(now())

@@ -1,38 +1,41 @@
-// src/app/(public)/loja/page.tsx
 "use client";
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import useSWR from "swr";
 
-// Importa o seu Card e o tipo Product
+// Importa o seu Card e o tipo Product (ajuste conforme seu projeto)
 import ProductCard, { Product } from "@/components/ProductCard";
-// Importa o SelectInput customizado
+// Importa o SelectInput customizado (ajuste conforme seu projeto)
 import { SelectInput } from "@/components/SelectInput";
 
+// Função simples de fetch
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export default function LojaPage() {
   const [showFilters, setShowFilters] = useState(true);
   const [orderBy, setOrderBy] = useState(""); // Controle do dropdown custom
 
+  // Lemos o valor de 'search' da URL
   const sp = useSearchParams();
   const searchTerm = sp?.get("search") ?? "";
 
-  // Endpoint da sua API
+  // Montamos o endpoint de acordo com o valor de busca
   const endpoint = searchTerm.trim()
     ? `/api/products?search=${encodeURIComponent(searchTerm)}`
     : "/api/products";
 
-  const { data, error, isLoading } = useSWR<Product[]>(endpoint, fetcher, {
-    refreshInterval: 5000,
+  // Fetch usando SWR
+  const { data, error, isLoading } = useSWR(endpoint, fetcher, {
+    refreshInterval: 5000, // opcional
   });
 
-  // Exibir/ocultar filtros
+  // Função para exibir/ocultar filtros
   const toggleFilters = () => {
     setShowFilters((prev) => !prev);
   };
 
+  // Tratamento de erro
   if (error) {
     return (
       <section className="p-4">
@@ -44,6 +47,7 @@ export default function LojaPage() {
     );
   }
 
+  // Tratamento de loading
   if (isLoading || !data) {
     return (
       <section className="p-4">
@@ -55,13 +59,31 @@ export default function LojaPage() {
     );
   }
 
+  // Se a API não retornar um array, faça o tratamento necessário:
+  // Exemplo: se `data` for objeto, e seus produtos estiverem em `data.products`,
+  // seria `const arrayData = data.products || []`.
+  const arrayData = Array.isArray(data) ? data : [];
+
+  // Caso queira exibir um aviso se não for array ou veio vazio
+  if (!Array.isArray(data)) {
+    return (
+      <section className="p-4">
+        <h1 className="text-2xl font-bold mb-6 text-red-600">
+          Dados inválidos
+        </h1>
+        <p>
+          A resposta da API não é um array. Verifique o retorno do endpoint.
+        </p>
+      </section>
+    );
+  }
+
   // Exemplo simples de total de resultados
-  const totalResults = data.length;
+  const totalResults = arrayData.length;
 
   return (
     <section className="p-4">
-      {/* Barra superior 
-          Removido o 'flex-wrap' para evitar quebra desnecessária. */}
+      {/* Barra superior */}
       <div className="flex items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-3">
           {/* Botão Esconder/Mostrar Filtros */}
@@ -82,8 +104,7 @@ export default function LojaPage() {
           </p>
         </div>
 
-        {/* Ordenar por (SelectInput custom) 
-            Adicionamos "flex items-center gap-2" para ficar na mesma linha. */}
+        {/* Ordenar por (SelectInput custom) */}
         <div className="flex items-center gap-2">
           <label
             htmlFor="orderBy"
@@ -217,7 +238,7 @@ export default function LojaPage() {
               xl:grid-cols-4
             `}
           >
-            {data.map((product) => (
+            {arrayData.map((product: Product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>

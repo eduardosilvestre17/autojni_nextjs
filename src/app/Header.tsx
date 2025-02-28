@@ -6,7 +6,9 @@ import { useState, useEffect, useRef } from "react";
 import { ThemeSwitch } from "@/components/ThemeSwitch";
 import { SearchInput } from "@/components/SearchInput";
 
-// Hook simples de debounce
+/**
+ * Hook de debounce: retorna o valor somente após um atraso (delay) em ms.
+ */
 function useDebounce(value: string, delay: number) {
   const [debouncedValue, setDebouncedValue] = useState(value);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -30,17 +32,17 @@ function useDebounce(value: string, delay: number) {
 }
 
 export default function Header() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-
   const router = useRouter();
   const sp = useSearchParams();
   const pathname = usePathname();
 
-  // Guardamos a página onde o utilizador estava antes de começar a digitar
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Guardar a rota em que o usuário estava antes de começar a digitar
   const [backPath, setBackPath] = useState("");
 
-  // No primeiro render, capturamos a URL atual
+  // No primeiro render, capturamos a URL atual para poder voltar caso o searchTerm fique vazio
   useEffect(() => {
     if (typeof window !== "undefined") {
       setBackPath(window.location.pathname + window.location.search);
@@ -61,8 +63,10 @@ export default function Header() {
   // 3) Sempre que 'debouncedSearchTerm' mudar, atualiza a rota
   useEffect(() => {
     if (debouncedSearchTerm.trim()) {
+      // Vamos para /loja?search=debouncedSearchTerm
       router.replace(`/loja?search=${encodeURIComponent(debouncedSearchTerm)}`);
     } else {
+      // Se ficar vazio, voltamos para a rota original (ou para / se não tiver)
       if (backPath) {
         router.replace(backPath);
       } else {
@@ -83,7 +87,7 @@ export default function Header() {
     setMobileMenuOpen(!mobileMenuOpen);
   }
 
-  // Ícones à direita
+  // Ícones e switch de tema (lado direito)
   const IconsAndTheme = () => (
     <div className="flex items-center gap-4">
       <div className="flex items-center gap-2">
@@ -125,7 +129,7 @@ export default function Header() {
   return (
     <header className="bg-white dark:bg-gray-900 shadow relative">
       <div className="container mx-auto px-4 py-4">
-        {/* 
+        {/*
           Usamos uma grid responsiva que organiza:
           [Botão + Logo] - [Barra de pesquisa] - [Ícones]
         */}
@@ -175,9 +179,9 @@ export default function Header() {
 
           {/* Campo de pesquisa (central) */}
           <div className="flex justify-center w-full relative">
-            {/* 
-              w-full: ocupa toda a largura possível 
-              max-w-xl: limita a um tamanho adequado para desktop 
+            {/*
+              w-full: ocupa toda a largura possível
+              max-w-xl: limita a um tamanho adequado para desktop
               mx-auto: centraliza se houver espaço sobrando
             */}
             <div className="w-full max-w-xl mx-auto">
@@ -246,7 +250,7 @@ export default function Header() {
                              hover:text-myOrange dark:hover:text-myOrange
                              transition-colors"
                 >
-                  <i className="fa-solid fa-house text-lg"></i>
+                  <i className="fa-solid fa-house text-lg" />
                   <span>Home</span>
                 </Link>
               </li>
@@ -258,7 +262,7 @@ export default function Header() {
                              hover:text-myOrange dark:hover:text-myOrange
                              transition-colors"
                 >
-                  <i className="fa-solid fa-store text-lg"></i>
+                  <i className="fa-solid fa-store text-lg" />
                   <span>Loja Online</span>
                 </Link>
               </li>
@@ -270,7 +274,7 @@ export default function Header() {
                              hover:text-myOrange dark:hover:text-myOrange
                              transition-colors"
                 >
-                  <i className="fa-solid fa-circle-info text-lg"></i>
+                  <i className="fa-solid fa-circle-info text-lg" />
                   <span>Sobre</span>
                 </Link>
               </li>
@@ -282,7 +286,7 @@ export default function Header() {
                              hover:text-myOrange dark:hover:text-myOrange
                              transition-colors"
                 >
-                  <i className="fa-solid fa-envelope text-lg"></i>
+                  <i className="fa-solid fa-envelope text-lg" />
                   <span>Contacto</span>
                 </Link>
               </li>
