@@ -91,7 +91,7 @@ export default function AdminTable({
             <tr>
               <td
                 colSpan={columns.length}
-                className="px-3 py-2 text-center text-gray-500"
+                className="px-3 py-2 text-center text-foreground opacity-60"
               >
                 Nenhum registo encontrado.
               </td>
@@ -99,7 +99,10 @@ export default function AdminTable({
           )}
 
           {paginatedData.map((item, idx) => (
-            <tr key={idx} className="border-b last:border-0">
+            <tr
+              key={idx}
+              className="border-b last:border-0 border-foreground/20"
+            >
               {columns.map((col) => (
                 <td
                   key={col.key}
@@ -130,13 +133,19 @@ export default function AdminTable({
         <tbody>
           {!loading && paginatedData.length === 0 && (
             <tr>
-              <td colSpan={2} className="px-3 py-2 text-center text-gray-500">
+              <td
+                colSpan={2}
+                className="px-3 py-2 text-center text-foreground opacity-60"
+              >
                 Nenhum registo encontrado.
               </td>
             </tr>
           )}
           {paginatedData.map((item, idx) => (
-            <tr key={idx} className="border-b last:border-0">
+            <tr
+              key={idx}
+              className="border-b last:border-0 border-foreground/20"
+            >
               <td className="px-3 py-2 whitespace-normal break-words">
                 {mobileColumnKey ? item[mobileColumnKey] : ""}
               </td>
@@ -144,7 +153,7 @@ export default function AdminTable({
                 <button
                   type="button"
                   onClick={() => openModal(item)}
-                  className="text-blue-600 dark:text-blue-400 hover:scale-110 transition"
+                  className="text-primary dark:text-primary-dark hover:scale-110 transition"
                 >
                   <HiEye className="inline-block w-5 h-5" />
                 </button>
@@ -157,7 +166,7 @@ export default function AdminTable({
   );
 
   return (
-    <div className="primary primary-dark p-2 rounded relative">
+    <div className="p-2 rounded relative bg-background dark:bg-dark-bg">
       {loading && <p className="text-sm py-2">Carregando...</p>}
 
       {/* Desktop/Tablet: sem coluna de Detalhes */}
@@ -176,7 +185,7 @@ export default function AdminTable({
           <div className="flex gap-2">
             <button
               type="button"
-              className="bg-gray-200 dark:bg-gray-600 text-sm px-3 py-1 rounded disabled:opacity-50"
+              className="text-sm px-3 py-1 rounded disabled:opacity-50 bg-search-bg dark:bg-search-bg-dark"
               disabled={currentPage <= 1}
               onClick={handlePrevPage}
             >
@@ -184,7 +193,7 @@ export default function AdminTable({
             </button>
             <button
               type="button"
-              className="bg-gray-200 dark:bg-gray-600 text-sm px-3 py-1 rounded disabled:opacity-50"
+              className="text-sm px-3 py-1 rounded disabled:opacity-50 bg-search-bg dark:bg-search-bg-dark"
               disabled={currentPage >= totalPages}
               onClick={handleNextPage}
             >
@@ -198,7 +207,7 @@ export default function AdminTable({
         <>
           <div
             className={`
-              fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center
+              fixed inset-0 z-50 bg-dark-bg bg-opacity-40 flex items-center justify-center
               ${exiting ? "animate-fadeOut" : "animate-fadeIn"}
             `}
             onClick={closeModal}
@@ -212,12 +221,14 @@ export default function AdminTable({
             >
               <button
                 onClick={closeModal}
-                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                className="absolute top-2 right-2 text-foreground opacity-70 hover:opacity-100 dark:text-dark-foreground transition"
               >
                 ✕
               </button>
-              <h2 className="text-lg font-bold mb-2">Detalhes</h2>
-              <div className="space-y-2">
+              <h2 className="text-lg font-bold mb-2 text-foreground dark:text-dark-foreground">
+                Detalhes
+              </h2>
+              <div className="space-y-2 text-foreground dark:text-dark-foreground">
                 {columns.map((col) => (
                   <div key={col.key}>
                     <strong>{col.label}:</strong> {selectedItem[col.key]}
