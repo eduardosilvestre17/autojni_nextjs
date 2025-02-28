@@ -1,111 +1,6 @@
 "use client";
-
-import { useEffect, useState, useMemo } from "react";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { SearchInput } from "@/components/SearchInput";
-import { MdClose } from "react-icons/md";
-import { HiCheckCircle, HiXCircle, HiInformationCircle } from "react-icons/hi";
+import React, { useState, useEffect, useMemo } from "react";
 import AdminTable from "@/components/AdminTableClients";
-
-type NotificationType = "success" | "error" | "info";
-
-interface INotification {
-  id: string;
-  type: NotificationType;
-  title: string;
-  message: string;
-}
-
-function NotificationItem({
-  notification,
-  onClose,
-}: {
-  notification: INotification;
-  onClose: (id: string) => void;
-}) {
-  const { id, type, title, message } = notification;
-  const [exiting, setExiting] = useState(false);
-
-  // Utiliza as cores definidas no tailwind.config.ts
-  let bgColor = "bg-primary dark:bg-primary-dark";
-  let Icon = HiInformationCircle;
-
-  if (type === "success") {
-    bgColor = "bg-myOrange dark:bg-myOrange-dark";
-    Icon = HiCheckCircle;
-  } else if (type === "error") {
-    bgColor = "bg-myOrange-dark dark:bg-myOrange";
-    Icon = HiXCircle;
-  }
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      handleClose();
-    }, 4000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  function handleClose() {
-    setExiting(true);
-    setTimeout(() => {
-      onClose(id);
-    }, 300);
-  }
-
-  return (
-    <>
-      <style>{`
-        @keyframes slideInRight {
-          0% {
-            transform: translateX(120%);
-            opacity: 0;
-          }
-          100% {
-            transform: translateX(0);
-            opacity: 1;
-          }
-        }
-        @keyframes slideOutRight {
-          0% {
-            transform: translateX(0);
-            opacity: 1;
-          }
-          100% {
-            transform: translateX(120%);
-            opacity: 0;
-          }
-        }
-        .animate-slideIn {
-          animation: slideInRight 0.3s ease forwards;
-        }
-        .animate-slideOut {
-          animation: slideOutRight 0.3s ease forwards;
-        }
-      `}</style>
-      <div
-        className={`
-          flex items-start gap-3
-          w-72 p-4 mb-2 rounded text-white shadow-lg
-          ${bgColor}
-          ${exiting ? "animate-slideOut" : "animate-slideIn"}
-        `}
-      >
-        <Icon className="mt-1 h-5 w-5" />
-        <div className="flex-1">
-          <strong className="block font-semibold">{title}</strong>
-          <p className="text-sm">{message}</p>
-        </div>
-        <button
-          className="opacity-80 hover:opacity-100 transition"
-          onClick={handleClose}
-        >
-          <MdClose className="h-5 w-5" />
-        </button>
-      </div>
-    </>
-  );
-}
 
 /**
  * Remove acentos e converte a string para lowercase.
@@ -152,13 +47,13 @@ export default function ArticlesPage() {
   const [initialArticles, setInitialArticles] = useState<any[]>([]);
   const [fullArticles, setFullArticles] = useState<any[]>([]);
   const [allArticlesLoaded, setAllArticlesLoaded] = useState(false);
-  const [totalCount, setTotalCount] = useState(0);
 
   // Controle de carregamento e erro
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [totalCount, setTotalCount] = useState(0);
 
-  // Debounce de 300ms para atualizar o searchTerm
+  // Debounce de 300ms para o campo de busca
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearchTerm(typingSearch);
@@ -167,7 +62,7 @@ export default function ArticlesPage() {
   }, [typingSearch]);
 
   /**
-   * Carrega rapidamente apenas a primeira página de artigos (ex: 10 itens).
+   * Carrega rapidamente apenas a primeira página de artigos (por exemplo, 10 itens).
    */
   async function fetchInitialArticles() {
     setLoading(true);
@@ -219,6 +114,8 @@ export default function ArticlesPage() {
       setFullArticles(data.articles || []);
       setAllArticlesLoaded(true);
     } catch (err) {
+      // Se der erro no carregamento completo, apenas logamos
+      // (a listagem inicial ainda funciona com a primeira página)
       console.error(err);
     }
   }
@@ -233,7 +130,7 @@ export default function ArticlesPage() {
     fetchFullArticles();
   }, []);
 
-  // Se já carregou tudo, usa fullArticles; caso contrário, initialArticles
+  // Se já carregou tudo, usamos `fullArticles`, caso contrário, `initialArticles`
   const articlesToFilter = allArticlesLoaded ? fullArticles : initialArticles;
 
   // Filtro fuzzy pela descrição
@@ -283,10 +180,19 @@ export default function ArticlesPage() {
       {loading && <p>Carregando...</p>}
       {error && <p className="text-red-500">Erro: {error}</p>}
 
-      {allArticlesLoaded && (
-        <p className="mb-2">Total de artigos: {filteredArticles.length}</p>
-      )}
+      {/* Info sobre total de itens retornados ou totalCount se não estiver completo */}
+      <div className="mb-2">
+        {allArticlesLoaded ? (
+          <p>Total de artigos: {filteredArticles.length}</p>
+        ) : (
+          <p>
+            Carregando... Artigos iniciais: {initialArticles.length} / Total:
+            {totalCount}
+          </p>
+        )}
+      </div>
 
+      {/* Tabela usando AdminTableClients */}
       <div className="w-full overflow-x-auto">
         <AdminTable
           columns={columns}
@@ -297,6 +203,7 @@ export default function ArticlesPage() {
         />
       </div>
 
+      {/* Mensagem enquanto os artigos completos não estão carregados */}
       {!allArticlesLoaded && (
         <p className="mt-4 text-sm italic">
           Carregando todos os artigos em segundo plano...
