@@ -166,7 +166,7 @@ export default function AdminTable({
   );
 
   return (
-    <div className="p-2 rounded relative bg-background dark:bg-dark-bg">
+    <div className="p-2 rounded relative bg-background dark:bg-search-bg-dark">
       {loading && <p className="text-sm py-2">Carregando...</p>}
 
       {/* Desktop/Tablet: sem coluna de Detalhes */}
