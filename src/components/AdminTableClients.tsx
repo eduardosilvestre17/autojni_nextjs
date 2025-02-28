@@ -185,7 +185,14 @@ export default function AdminTable({
           <div className="flex gap-2">
             <button
               type="button"
-              className="text-sm px-3 py-1 rounded disabled:opacity-50 bg-search-bg dark:bg-search-bg-dark"
+              className="
+                text-sm px-3 py-1 rounded
+                disabled:opacity-50
+                bg-primary text-white
+                dark:bg-primary-dark
+                hover:bg-primary-dark dark:hover:bg-primary
+                transition-colors
+              "
               disabled={currentPage <= 1}
               onClick={handlePrevPage}
             >
@@ -193,7 +200,14 @@ export default function AdminTable({
             </button>
             <button
               type="button"
-              className="text-sm px-3 py-1 rounded disabled:opacity-50 bg-search-bg dark:bg-search-bg-dark"
+              className="
+                text-sm px-3 py-1 rounded
+                disabled:opacity-50
+                bg-primary text-white
+                dark:bg-primary-dark
+                hover:bg-primary-dark dark:hover:bg-primary
+                transition-colors
+              "
               disabled={currentPage >= totalPages}
               onClick={handleNextPage}
             >
