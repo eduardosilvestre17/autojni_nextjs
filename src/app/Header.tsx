@@ -7,24 +7,21 @@ import { ThemeSwitch } from "@/components/ThemeSwitch";
 import { SearchInput } from "@/components/SearchInput";
 
 /**
- * Hook de debounce: retorna o valor somente após um atraso (delay) em ms.
+ * Hook de debounce:
+ * Retorna 'value' somente após "delay" ms sem que o usuário digite.
  */
 function useDebounce(value: string, delay: number) {
   const [debouncedValue, setDebouncedValue] = useState(value);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       setDebouncedValue(value);
     }, delay);
 
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, [value, delay]);
 
@@ -33,56 +30,66 @@ function useDebounce(value: string, delay: number) {
 
 export default function Header() {
   const router = useRouter();
-  const sp = useSearchParams();
+  const searchParams = useSearchParams();
   const pathname = usePathname();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Guardar a rota em que o usuário estava antes de começar a digitar
-  const [backPath, setBackPath] = useState("");
-
-  // No primeiro render, capturamos a URL atual para poder voltar caso o searchTerm fique vazio
+  // Ao mudar de rota:
+  // - Se estamos em "/loja", capturamos o ?search= da URL e setamos no campo
+  // - Se saímos de "/loja", limpamos o campo
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      setBackPath(window.location.pathname + window.location.search);
-    }
-  }, []);
-
-  // 1) Obter valor inicial de ?search= da URL (caso exista)
-  useEffect(() => {
-    const init = sp?.get("search");
-    if (init) {
-      setSearchTerm(init);
-    }
-  }, [sp]);
-
-  // 2) debounce de 300ms no texto digitado
-  const debouncedSearchTerm = useDebounce(searchTerm, 300);
-
-  // 3) Sempre que 'debouncedSearchTerm' mudar, atualiza a rota
-  useEffect(() => {
-    if (debouncedSearchTerm.trim()) {
-      // Vamos para /loja?search=debouncedSearchTerm
-      router.replace(`/loja?search=${encodeURIComponent(debouncedSearchTerm)}`);
+    if (pathname === "/loja") {
+      const initSearch = searchParams?.get("search") || "";
+      setSearchTerm(initSearch);
     } else {
-      // Se ficar vazio, voltamos para a rota original (ou para / se não tiver)
-      if (backPath) {
-        router.replace(backPath);
-      } else {
-        router.replace("/");
-      }
-    }
-  }, [debouncedSearchTerm, router, backPath]);
-
-  // 4) Limpar campo caso saia da "/loja"
-  useEffect(() => {
-    if (pathname !== "/loja") {
       setSearchTerm("");
     }
-  }, [pathname]);
+  }, [pathname, searchParams]);
 
-  // Botão de menu mobile
+  // Faz debounce no 'searchTerm'
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  // Guardamos o último valor que enviamos para a rota,
+  // para não redirecionar repetidamente com o mesmo valor.
+  const lastSearchRef = useRef<string>("");
+
+  /**
+   * Efeito principal que faz a navegação:
+   * - Se o 'debouncedSearchTerm' mudou em relação ao 'lastSearchRef.current':
+   *   - Se houver texto, vamos para /loja?search=texto
+   *   - Se estiver vazio e estivermos em /loja, removemos ?search (router.replace("/loja"))
+   *   - Caso contrário, não fazemos nada (para não "forçar" o user de volta à loja).
+   */
+  useEffect(() => {
+    const currentSearch = debouncedSearchTerm.trim();
+
+    // Se não houve mudança no valor, não faz nada
+    if (currentSearch === lastSearchRef.current) return;
+
+    // Atualiza o ref
+    lastSearchRef.current = currentSearch;
+
+    // Se o usuário digitou algo
+    if (currentSearch) {
+      // Se já estiver na loja, replace para não poluir o histórico
+      if (pathname === "/loja") {
+        router.replace(`/loja?search=${encodeURIComponent(currentSearch)}`);
+      } else {
+        // Caso contrário, push para /loja?search=...
+        router.push(`/loja?search=${encodeURIComponent(currentSearch)}`);
+      }
+    } else {
+      // Se não há texto e estamos na /loja, remove o ?search
+      if (pathname === "/loja") {
+        router.replace("/loja");
+      }
+      // Se não está na loja, não faz nada
+    }
+  }, [debouncedSearchTerm, pathname, router]);
+
+  // Botão menu mobile
   function toggleMobileMenu() {
     setMobileMenuOpen(!mobileMenuOpen);
   }
@@ -130,8 +137,7 @@ export default function Header() {
     <header className="bg-white dark:bg-gray-900 shadow relative">
       <div className="container mx-auto px-4 py-4">
         {/*
-          Usamos uma grid responsiva que organiza:
-          [Botão + Logo] - [Barra de pesquisa] - [Ícones]
+          Layout: [Botão + Logo] - [Barra de pesquisa] - [Ícones]
         */}
         <div className="flex flex-col items-center gap-4 md:grid md:grid-cols-[auto,1fr,auto]">
           {/* Parte esquerda: hambúrguer + logo */}
@@ -177,13 +183,8 @@ export default function Header() {
             </div>
           </div>
 
-          {/* Campo de pesquisa (central) */}
+          {/* Barra de pesquisa (central) */}
           <div className="flex justify-center w-full relative">
-            {/*
-              w-full: ocupa toda a largura possível
-              max-w-xl: limita a um tamanho adequado para desktop
-              mx-auto: centraliza se houver espaço sobrando
-            */}
             <div className="w-full max-w-xl mx-auto">
               <SearchInput
                 placeholder="Pesquisar produtos..."
