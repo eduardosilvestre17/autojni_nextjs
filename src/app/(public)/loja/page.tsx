@@ -4,35 +4,38 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import useSWR from "swr";
 
-// Importe o seu ProductCard e o tipo Product (ajuste o caminho conforme seu projeto)
+// Ajuste caminhos conforme seu projeto:
 import ProductCard, { Product } from "@/components/ProductCard";
-// Importe o SelectInput customizado (ajuste o caminho conforme seu projeto)
 import { SelectInput } from "@/components/SelectInput";
 
-// Função simples de fetch
+// Função de fetch simples
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
+// Valores mínimo e máximo para o slider de preço
+const MIN = 0;
+const MAX = 3860;
+
 export default function LojaPage() {
-  // Exibir/ocultar todo o aside (filtros)
+  // Exibir/ocultar todo o bloco de filtros (aside)
   const [showFilters, setShowFilters] = useState(true);
 
-  // Estados de cada secção de filtro (abrir/fechar)
+  // Estados de cada seção de filtro (abrir/fechar)
   const [dispOpen, setDispOpen] = useState(true);
   const [precoOpen, setPrecoOpen] = useState(true);
   const [marcaOpen, setMarcaOpen] = useState(true);
 
-  // Estados do preço mínimo e máximo (para as duas “bolas” do range)
-  const [minPrice, setMinPrice] = useState(0);
-  const [maxPrice, setMaxPrice] = useState(3860);
+  // Estados do preço (um “slider” com dois thumbs)
+  const [minVal, setMinVal] = useState(MIN);
+  const [maxVal, setMaxVal] = useState(MAX);
 
-  // Controle do dropdown de ordenação
+  // Estado para o dropdown de ordenação
   const [orderBy, setOrderBy] = useState("");
 
-  // Pegar parâmetro "search" da URL (Next.js)
+  // Lê "search" da URL (Next.js)
   const sp = useSearchParams();
   const searchTerm = sp?.get("search") ?? "";
 
-  // Montar o endpoint de acordo com a busca
+  // Monta o endpoint de acordo com a busca
   const endpoint = searchTerm.trim()
     ? `/api/products?search=${encodeURIComponent(searchTerm)}`
     : "/api/products";
@@ -42,7 +45,7 @@ export default function LojaPage() {
     refreshInterval: 5000, // opcional
   });
 
-  // Função para exibir/ocultar o aside completo
+  // Função para exibir/ocultar todo o aside
   const toggleFilters = () => {
     setShowFilters((prev) => !prev);
   };
@@ -71,7 +74,7 @@ export default function LojaPage() {
     );
   }
 
-  // Se a API não retornar um array, faça o tratamento necessário
+  // Verifica se o retorno é um array de produtos
   const arrayData = Array.isArray(data) ? data : [];
   if (!Array.isArray(data)) {
     return (
@@ -89,39 +92,28 @@ export default function LojaPage() {
   // Exemplo simples de total de resultados
   const totalResults = arrayData.length;
 
-  // Handlers para sincronizar min e max (evitando que fiquem invertidos)
+  // Manipular mudanças nos sliders (impede cruzamento invertido)
   const handleMinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number(e.target.value);
-    // Se o valor for maior que o max, ajusta para max-1
-    if (value >= maxPrice) {
-      setMinPrice(maxPrice - 1);
-    } else {
-      setMinPrice(value);
-    }
+    if (value <= maxVal) setMinVal(value);
   };
-
   const handleMaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number(e.target.value);
-    // Se o valor for menor que o min, ajusta para min+1
-    if (value <= minPrice) {
-      setMaxPrice(minPrice + 1);
-    } else {
-      setMaxPrice(value);
-    }
+    if (value >= minVal) setMaxVal(value);
   };
+
+  // Cálculo de porcentagem para a barra “ativa” (entre as duas bolinhas)
+  const minPercent = ((minVal - MIN) / (MAX - MIN)) * 100;
+  const maxPercent = ((maxVal - MIN) / (MAX - MIN)) * 100;
 
   return (
     <section className="p-4">
-      {/* Barra superior: botão de esconder/mostrar + contagem + ordenação */}
+      {/* Barra superior: botão + contagem + ordenação */}
       <div className="flex items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-3">
           <button
             onClick={toggleFilters}
-            className="border border-gray-300 dark:border-gray-700 
-                       rounded px-3 py-2 bg-white dark:bg-gray-800 
-                       text-foreground dark:text-dark-foreground 
-                       hover:bg-gray-100 dark:hover:bg-gray-700 
-                       transition-colors"
+            className="border border-gray-300 dark:border-gray-700 rounded px-3 py-2 bg-white dark:bg-gray-800 text-foreground dark:text-dark-foreground hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
             {showFilters ? "Esconder Filtros" : "Mostrar Filtros"}
           </button>
@@ -129,8 +121,6 @@ export default function LojaPage() {
             {totalResults} resultado{totalResults !== 1 && "s"}.
           </p>
         </div>
-
-        {/* Ordenar por (SelectInput custom) */}
         <div className="flex items-center gap-2">
           <label
             htmlFor="orderBy"
@@ -152,7 +142,7 @@ export default function LojaPage() {
         </div>
       </div>
 
-      {/* Layout principal: ASIDE + GRID */}
+      {/* Layout principal: Filtros (aside) + Grid de produtos */}
       <div
         className={`grid gap-6 transition-[grid-template-columns] duration-300 ease-in-out ${
           showFilters ? "grid-cols-1 md:grid-cols-[260px_1fr]" : "grid-cols-1"
@@ -163,14 +153,14 @@ export default function LojaPage() {
           <aside className="bg-white dark:bg-gray-800 p-4 rounded shadow self-start">
             {/* Filtro: Disponibilidade */}
             <div className="mb-6">
-              <div className="flex items-center justify-between mb-2">
+              <div
+                className="flex items-center justify-between mb-2 cursor-pointer"
+                onClick={() => setDispOpen(!dispOpen)}
+              >
                 <h2 className="text-base font-semibold text-foreground dark:text-dark-foreground">
                   Disponibilidade
                 </h2>
-                <span
-                  className="text-3xl text-gray-500 cursor-pointer select-none hover:text-gray-700 transition-colors"
-                  onClick={() => setDispOpen(!dispOpen)}
-                >
+                <span className="text-3xl text-gray-500 select-none hover:text-gray-700 transition-colors">
                   {dispOpen ? "−" : "+"}
                 </span>
               </div>
@@ -201,16 +191,16 @@ export default function LojaPage() {
               </div>
             </div>
 
-            {/* Filtro: Preço (dois sliders) */}
+            {/* Filtro: Preço (um slider com dois "thumbs") */}
             <div className="mb-6">
-              <div className="flex items-center justify-between mb-2">
+              <div
+                className="flex items-center justify-between mb-2 cursor-pointer"
+                onClick={() => setPrecoOpen(!precoOpen)}
+              >
                 <h2 className="text-base font-semibold text-foreground dark:text-dark-foreground">
                   Preço
                 </h2>
-                <span
-                  className="text-3xl text-gray-500 cursor-pointer select-none hover:text-gray-700 transition-colors"
-                  onClick={() => setPrecoOpen(!precoOpen)}
-                >
+                <span className="text-3xl text-gray-500 select-none hover:text-gray-700 transition-colors">
                   {precoOpen ? "−" : "+"}
                 </span>
               </div>
@@ -219,54 +209,74 @@ export default function LojaPage() {
                   precoOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
                 }`}
               >
-                {/* Range para preço mínimo */}
-                <div className="flex flex-col mb-2">
-                  <label className="text-sm text-gray-600 dark:text-gray-400">
-                    Preço Mínimo: {minPrice.toFixed(2)}€
-                  </label>
+                {/* Slider “único” com dois ranges sobrepostos */}
+                <div className="relative w-full h-8">
+                  {/* Trilha “inativa” (cinza) */}
+                  <div className="absolute top-1/2 left-0 right-0 h-1 bg-gray-300 dark:bg-gray-700 rounded transform -translate-y-1/2" />
+                  {/* Trilha “ativa” (entre as duas bolinhas) */}
+                  <div
+                    className="absolute top-1/2 h-1 bg-blue-500 dark:bg-blue-400 rounded transform -translate-y-1/2"
+                    style={{
+                      left: `${
+                        minVal === MIN
+                          ? 0
+                          : ((minVal - MIN) / (MAX - MIN)) * 100
+                      }%`,
+                      right: `${
+                        maxVal === MAX
+                          ? 0
+                          : 100 - ((maxVal - MIN) / (MAX - MIN)) * 100
+                      }%`,
+                    }}
+                  />
+                  {/* Input range para o minVal (thumb esquerdo) */}
                   <input
                     type="range"
-                    min="0"
-                    max="3860"
-                    value={minPrice}
+                    min={MIN}
+                    max={MAX}
+                    value={minVal}
                     onChange={handleMinChange}
-                    className="w-full mt-1"
+                    className="absolute w-full h-0 appearance-none pointer-events-none bg-transparent top-0"
+                    style={{ zIndex: 3 }}
                   />
-                </div>
-
-                {/* Range para preço máximo */}
-                <div className="flex flex-col mb-2">
-                  <label className="text-sm text-gray-600 dark:text-gray-400">
-                    Preço Máximo: {maxPrice.toFixed(2)}€
-                  </label>
+                  {/* Input range para o maxVal (thumb direito) */}
                   <input
                     type="range"
-                    min="0"
-                    max="3860"
-                    value={maxPrice}
+                    min={MIN}
+                    max={MAX}
+                    value={maxVal}
                     onChange={handleMaxChange}
-                    className="w-full mt-1"
+                    className="absolute w-full h-0 appearance-none pointer-events-none bg-transparent top-0"
+                    style={{ zIndex: 4 }}
                   />
                 </div>
-
-                {/* Valores atuais exibidos lado a lado */}
-                <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                  <span>Min: {minPrice.toFixed(2)}</span>
-                  <span>Máx: {maxPrice.toFixed(2)}</span>
+                <div className="mt-2 flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
+                  <span>
+                    Min:{" "}
+                    <strong className="text-foreground dark:text-dark-foreground">
+                      {minVal.toFixed(2)}€
+                    </strong>
+                  </span>
+                  <span>
+                    Máx:{" "}
+                    <strong className="text-foreground dark:text-dark-foreground">
+                      {maxVal.toFixed(2)}€
+                    </strong>
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* Filtro: Marca */}
             <div>
-              <div className="flex items-center justify-between mb-2">
+              <div
+                className="flex items-center justify-between mb-2 cursor-pointer"
+                onClick={() => setMarcaOpen(!marcaOpen)}
+              >
                 <h2 className="text-base font-semibold text-foreground dark:text-dark-foreground">
                   Marca
                 </h2>
-                <span
-                  className="text-3xl text-gray-500 cursor-pointer select-none hover:text-gray-700 transition-colors"
-                  onClick={() => setMarcaOpen(!marcaOpen)}
-                >
+                <span className="text-3xl text-gray-500 select-none hover:text-gray-700 transition-colors">
                   {marcaOpen ? "−" : "+"}
                 </span>
               </div>
@@ -278,9 +288,7 @@ export default function LojaPage() {
                 <input
                   type="text"
                   placeholder="Pesquisar marca..."
-                  className="w-full mb-2 p-2 border border-gray-300 dark:border-gray-700 
-                             rounded text-sm bg-white dark:bg-gray-800 
-                             text-foreground dark:text-dark-foreground"
+                  className="w-full mb-2 p-2 border border-gray-300 dark:border-gray-700 rounded text-sm bg-white dark:bg-gray-800 text-foreground dark:text-dark-foreground"
                 />
                 <div className="flex flex-col space-y-2 text-sm text-gray-600 dark:text-gray-400">
                   <label className="flex items-center">
@@ -319,6 +327,40 @@ export default function LojaPage() {
           </div>
         </main>
       </div>
+
+      {/* Estilos para os "thumbs" do slider (você pode mover para um CSS global, se preferir) */}
+      <style jsx>{`
+        /* WebKit (Chrome, Safari etc.) */
+        input[type="range"]::-webkit-slider-thumb {
+          width: 1rem;
+          height: 1rem;
+          background: #3b82f6; /* Azul do Tailwind "blue-500" */
+          border-radius: 9999px;
+          border: none;
+          cursor: pointer;
+          margin-top: 0.5rem; /* Aumentado para alinhar melhor com a barra */
+          appearance: none;
+          pointer-events: all;
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+          height: 0; /* Esconde a trilha padrão */
+        }
+
+        /* Firefox */
+        input[type="range"]::-moz-range-thumb {
+          width: 1rem;
+          height: 1rem;
+          background: #3b82f6;
+          border-radius: 9999px;
+          border: none;
+          cursor: pointer;
+          pointer-events: all;
+          margin-top: -0.5rem; /* Aumentado para alinhar melhor com a barra */
+        }
+        input[type="range"]::-moz-range-track {
+          height: 0; /* Esconde a trilha padrão */
+        }
+      `}</style>
     </section>
   );
 }
