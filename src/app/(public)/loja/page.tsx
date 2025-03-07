@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import ProductCard, { Product } from "@/components/ProductCard";
@@ -14,9 +14,9 @@ const fetcher = (url: string) => fetch(url).then((r) => r.json());
  * ===========================
  * Componente PriceRangeSlider
  * ===========================
- * - Renderiza uma trilha (track),
- * - Renderiza a faixa colorida entre min e max,
- * - Renderiza duas "bolinhas" (thumbs) que podem ser arrastadas.
+ * - Calcula e salva a largura do slider (em px) ao montar,
+ * - Faz o clamp do movimento em px para que a bolinha não saia,
+ * - Converte valor -> px e px -> valor.
  */
 interface PriceRangeSliderProps {
   minPrice: number;
@@ -34,56 +34,90 @@ function PriceRangeSlider({
   maxLimit,
 }: PriceRangeSliderProps) {
   const sliderRef = useRef<HTMLDivElement>(null);
+
+  // Largura real do slider (px) - medida ao montar
+  const [sliderWidth, setSliderWidth] = useState(0);
+
+  // Diâmetro da bolinha (w-4/h-4 => 16px)
+  const thumbDiameter = 16;
+
+  // Qual bolinha está sendo arrastada?
   const [draggingThumb, setDraggingThumb] = useState<"min" | "max" | null>(
     null
   );
 
-  // Converte um valor (ex: 0 a 1000) para porcentagem (0% a 100%)
-  const valueToPercent = useCallback(
-    (value: number) => {
-      return ((value - minLimit) / (maxLimit - minLimit)) * 100;
-    },
-    [minLimit, maxLimit]
-  );
-
-  // Converte a posição do mouse/touch (em px) dentro do slider para um valor
-  const pixelToValue = useCallback(
-    (clientX: number) => {
-      if (!sliderRef.current) return minLimit;
+  // Ao montar, mede a largura do slider e guarda em estado
+  useEffect(() => {
+    if (sliderRef.current) {
       const rect = sliderRef.current.getBoundingClientRect();
-      const width = rect.width;
+      setSliderWidth(rect.width);
+    }
+  }, []);
 
-      // Garante que o X fique dentro do range [0, width]
-      const clampedX = Math.max(0, Math.min(clientX - rect.left, width));
+  // Converte valor (0..1000) -> posição em px no slider
+  const valueToPx = useCallback(
+    (value: number) => {
+      if (sliderWidth <= 0) return 0;
 
-      // Converte para percent
-      const percent = clampedX / width;
-
-      // Converte para o valor real e arredonda
-      return Math.round(minLimit + percent * (maxLimit - minLimit));
+      // Fração de 0..1
+      const fraction = (value - minLimit) / (maxLimit - minLimit);
+      // Posição em px (lado esquerdo da bolinha)
+      // Ela pode ir de 0 até (sliderWidth - thumbDiameter)
+      return fraction * (sliderWidth - thumbDiameter);
     },
-    [minLimit, maxLimit]
+    [sliderWidth, minLimit, maxLimit, thumbDiameter]
   );
 
-  // Função para atualizar a posição ao arrastar
+  // Converte posição em px -> valor (0..1000)
+  const pxToValue = useCallback(
+    (px: number) => {
+      if (sliderWidth <= 0) return minLimit;
+
+      // Fração de 0..1 com base na posição
+      const fraction = px / (sliderWidth - thumbDiameter);
+      // Mapeia para o range minLimit..maxLimit
+      return Math.round(minLimit + fraction * (maxLimit - minLimit));
+    },
+    [sliderWidth, minLimit, maxLimit, thumbDiameter]
+  );
+
+  // Ao arrastar, pega o x do mouse/touch e converte p/ valor
   const handleMove = useCallback(
     (clientX: number) => {
       if (!draggingThumb) return;
-      const newValue = pixelToValue(clientX);
+      if (!sliderRef.current) return;
+
+      // Descobre o X relativo ao início do slider
+      const rect = sliderRef.current.getBoundingClientRect();
+      const x = clientX - rect.left;
+
+      // Clampa esse x para [0 .. sliderWidth - thumbDiameter],
+      // para que a bolinha não saia pelos limites
+      const clampedX = Math.max(0, Math.min(x, sliderWidth - thumbDiameter));
+
+      // Converte px -> valor
+      const newValue = pxToValue(clampedX);
 
       if (draggingThumb === "min") {
-        // Não deixa passar do maxPrice
+        // Nunca deixa o min passar do max
         onChange(Math.min(newValue, maxPrice), maxPrice);
       } else {
-        // draggingThumb === "max"
-        // Não deixa ficar abaixo do minPrice
+        // Nunca deixa o max ir abaixo do min
         onChange(minPrice, Math.max(newValue, minPrice));
       }
     },
-    [draggingThumb, pixelToValue, minPrice, maxPrice, onChange]
+    [
+      draggingThumb,
+      sliderWidth,
+      thumbDiameter,
+      minPrice,
+      maxPrice,
+      onChange,
+      pxToValue,
+    ]
   );
 
-  // Quando começa a arrastar (mousedown/touchstart)
+  // Início do arrasto
   const handleStartDrag = (
     thumb: "min" | "max",
     e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>
@@ -99,13 +133,13 @@ function PriceRangeSlider({
     }
   };
 
-  // Quando solta (mouseup/touchend)
+  // Fim do arrasto
   const handleEndDrag = useCallback(() => {
     setDraggingThumb(null);
   }, []);
 
-  // Listeners globais para mouse/touch
-  React.useEffect(() => {
+  // Listeners globais p/ mouse/touch (movimento + soltar)
+  useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
       if (draggingThumb) handleMove(e.clientX);
     };
@@ -128,23 +162,29 @@ function PriceRangeSlider({
     };
   }, [draggingThumb, handleMove, handleEndDrag]);
 
-  // Calcula as posições em % (entre 0 e 100)
-  const leftPercent = valueToPercent(minPrice);
-  const rightPercent = valueToPercent(maxPrice);
+  // =================================
+  // Renderização das bolinhas e da faixa
+  // =================================
+  // Posições em px (0..sliderWidth - thumbDiameter)
+  const minPx = valueToPx(minPrice);
+  const maxPx = valueToPx(maxPrice);
+
+  // Para a faixa colorida (entre min e max):
+  const leftTrack = Math.min(minPx, maxPx);
+  const widthTrack = Math.abs(maxPx - minPx);
 
   return (
-    // Repare no "px-2": isso adiciona 8px de padding em cada lado,
-    // para as bolinhas ficarem dentro dos limites sem serem cortadas.
-    <div ref={sliderRef} className="relative w-full h-6 px-2">
-      {/* Trilha de fundo */}
+    // Removido padding lateral: queremos que a bolinha vá até a borda do container
+    <div ref={sliderRef} className="relative w-full h-6">
+      {/* Trilha de fundo (100% da largura) */}
       <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-2 bg-gray-300 rounded pointer-events-none" />
 
-      {/* Faixa colorida entre min e max */}
+      {/* Faixa colorida entre minPx e maxPx */}
       <div
         className="absolute top-1/2 -translate-y-1/2 h-2 bg-blue-500 rounded pointer-events-none"
         style={{
-          left: `${Math.min(leftPercent, rightPercent)}%`,
-          width: `${Math.abs(rightPercent - leftPercent)}%`,
+          left: `${leftTrack}px`,
+          width: `${widthTrack}px`,
         }}
       />
 
@@ -152,9 +192,10 @@ function PriceRangeSlider({
       <div
         className="absolute w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow-md cursor-pointer"
         style={{
+          // Aqui o left é o lado esquerdo da bolinha, sem translateX(-50%)
+          left: `${minPx}px`,
           top: "50%",
-          left: `${leftPercent}%`,
-          transform: "translate(-50%, -50%)",
+          transform: "translateY(-50%)",
         }}
         onMouseDown={(e) => handleStartDrag("min", e)}
         onTouchStart={(e) => handleStartDrag("min", e)}
@@ -164,9 +205,9 @@ function PriceRangeSlider({
       <div
         className="absolute w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow-md cursor-pointer"
         style={{
+          left: `${maxPx}px`,
           top: "50%",
-          left: `${rightPercent}%`,
-          transform: "translate(-50%, -50%)",
+          transform: "translateY(-50%)",
         }}
         onMouseDown={(e) => handleStartDrag("max", e)}
         onTouchStart={(e) => handleStartDrag("max", e)}
@@ -191,7 +232,7 @@ export default function LojaPage() {
   const [priceOpen, setPriceOpen] = useState(true);
   const [marcaOpen, setMarcaOpen] = useState(true);
 
-  // Estados para a faixa de preço
+  // Estados para a faixa de preço (inicialmente 0..1000)
   const [minPrice, setMinPrice] = useState(0);
   const [maxPrice, setMaxPrice] = useState(1000);
 
@@ -250,7 +291,6 @@ export default function LojaPage() {
 
   // Agora data é um array
   const arrayData = data;
-  // Declare totalResults apenas 1 vez
   const totalResults = arrayData.length;
 
   // Função para ordenar via mobile
@@ -260,8 +300,7 @@ export default function LojaPage() {
   };
 
   /**
-   * Conteúdo do menu de filtros (aside):
-   * Disponibilidade -> Faixa de Preço -> Marca
+   * Filtros (aside)
    */
   const FiltersAsideContent = (
     <>
@@ -305,7 +344,7 @@ export default function LojaPage() {
         </div>
       </div>
 
-      {/* Faixa de Preço (após Disponibilidade, antes de Marca) */}
+      {/* Faixa de Preço */}
       <div className="mb-6">
         <div
           className="flex items-center justify-between mb-2 cursor-pointer"
@@ -342,7 +381,7 @@ export default function LojaPage() {
         </div>
       </div>
 
-      {/* Marca (agora depois da Faixa de Preço) */}
+      {/* Marca */}
       <div className="mb-6">
         <div
           className="flex items-center justify-between mb-2 cursor-pointer"
