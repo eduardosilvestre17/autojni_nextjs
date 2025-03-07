@@ -1,33 +1,44 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { FaSun, FaMoon } from "react-icons/fa";
 import { useTheme } from "next-themes";
 
 export function ThemeSwitch() {
-  // Hook do next-themes
   const { theme, systemTheme, setTheme } = useTheme();
 
-  // Se 'theme' estiver "system", pegamos o valor real do sistema
+  // Estado para saber se já "montamos" (hidratamos) o componente
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Se 'theme' for "system", usamos o tema real do sistema
   const currentTheme = theme === "system" ? systemTheme : theme;
   const isDark = currentTheme === "dark";
 
-  // Ao clicar, se estiver em 'dark', muda pra 'light'; senão, muda pra 'dark'
+  // Ao clicar no input, alterna entre dark e light
   function toggleTheme() {
     setTheme(isDark ? "light" : "dark");
+  }
+
+  // Se ainda não montou, não renderiza nada (ou renderiza um placeholder)
+  if (!mounted) {
+    return null;
   }
 
   return (
     <label className="relative inline-flex items-center cursor-pointer">
       {/* 
-        Podíamos usar um <button> normal. Mas, como no seu exemplo,
-        deixo um <input type="checkbox"> estilizado. 
+        Usamos <input type="checkbox"> apenas para fins de acessibilidade,
+        e estilizamos manualmente (sr-only, etc). 
       */}
       <input
         type="checkbox"
         className="sr-only peer"
         checked={isDark}
         onChange={toggleTheme}
-        // Se preferir, pode desabilitar o input enquanto 'systemTheme' não estiver carregado
       />
       <div
         className={`
