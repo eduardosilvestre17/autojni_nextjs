@@ -191,29 +191,41 @@ function PriceRangeSlider({
         }}
       />
 
-      {/* Thumb do min */}
+      {/* Thumb do min (envolta em div extra p/ aumentar hitbox no mobile) */}
       <div
-        className="absolute w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow-md cursor-pointer"
+        className="absolute"
         style={{
-          left: `${minPx}px`, // lado esquerdo da bolinha
+          left: `${minPx}px`,
           top: "50%",
           transform: "translateY(-50%)",
         }}
-        onMouseDown={(e) => handleStartDrag("min", e)}
-        onTouchStart={(e) => handleStartDrag("min", e)}
-      />
+      >
+        {/* Bolinha visível, sem pointer events */}
+        <div className="relative w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow-md pointer-events-none" />
+        {/* Área extra de clique para mobile (a -m-2 retira margin, expandindo) */}
+        <div
+          className="absolute inset-0 -m-2 md:-m-0 cursor-pointer"
+          onMouseDown={(e) => handleStartDrag("min", e)}
+          onTouchStart={(e) => handleStartDrag("min", e)}
+        />
+      </div>
 
-      {/* Thumb do max */}
+      {/* Thumb do max (mesma ideia) */}
       <div
-        className="absolute w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow-md cursor-pointer"
+        className="absolute"
         style={{
           left: `${maxPx}px`,
           top: "50%",
           transform: "translateY(-50%)",
         }}
-        onMouseDown={(e) => handleStartDrag("max", e)}
-        onTouchStart={(e) => handleStartDrag("max", e)}
-      />
+      >
+        <div className="relative w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow-md pointer-events-none" />
+        <div
+          className="absolute inset-0 -m-2 md:-m-0 cursor-pointer"
+          onMouseDown={(e) => handleStartDrag("max", e)}
+          onTouchStart={(e) => handleStartDrag("max", e)}
+        />
+      </div>
     </div>
   );
 }
