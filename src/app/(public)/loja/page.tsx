@@ -173,7 +173,7 @@ function PriceRangeSlider({
   const rightEdge = Math.max(minPx, maxPx) + thumbDiameter;
 
   // Clampa o lado direito para não exceder o sliderWidth
-  const trackLeft = Math.max(0, leftEdge); // normalmente 0
+  const trackLeft = Math.max(0, leftEdge);
   const trackRight = Math.min(sliderWidth, rightEdge);
   const trackWidth = Math.max(0, trackRight - trackLeft);
 
@@ -512,9 +512,9 @@ export default function LojaPage() {
             onClick={() => setMobileFilterOpen(false)}
           />
           <aside
-            className={`fixed top-0 left-0 w-64 h-full bg-white dark:bg-gray-800 z-50 transform transition-transform ${
+            className={`fixed top-0 left-0 w-full h-full bg-white dark:bg-gray-800 z-50 transform transition-transform ${
               mobileFilterOpen ? "translate-x-0" : "-translate-x-full"
-            } p-4 overflow-auto`}
+            } p-4 overflow-auto overscroll-none`}
           >
             <button
               className="mb-4 border border-gray-300 dark:border-gray-700 rounded px-3 py-2 bg-white dark:bg-gray-800 text-foreground dark:text-dark-foreground hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
