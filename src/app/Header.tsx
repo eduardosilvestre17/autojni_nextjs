@@ -97,6 +97,22 @@ export default function Header() {
   // Ícones e switch de tema (lado direito)
   const IconsAndTheme = () => (
     <div className="flex items-center gap-4">
+      {/* Link destacado para localização */}
+      <Link
+        href="https://maps.app.goo.gl/2hVdvtqxuJF4e52v5"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-2 p-2
+                   text-primary dark:text-primary
+                   hover:text-myOrange dark:hover:text-myOrange
+                   transition-colors"
+      >
+        {/* Ícone maior; texto "Visite-nos" só aparece em telas md ou maiores */}
+        <i className="fa-solid fa-location-dot text-xl md:text-2xl" />
+        <span className="hidden md:inline text-xl font-bold">Visite-nos</span>
+      </Link>
+
+      {/* Demais ícones */}
       <div className="flex items-center gap-2">
         {/* Favoritos */}
         <Link
@@ -128,6 +144,7 @@ export default function Header() {
           <span className="hidden md:inline">Iniciar Sessão</span>
         </Link>
       </div>
+
       {/* Switch de tema */}
       <ThemeSwitch />
     </div>
@@ -136,9 +153,7 @@ export default function Header() {
   return (
     <header className="bg-white dark:bg-gray-900 shadow relative">
       <div className="container mx-auto px-4 py-4">
-        {/*
-          Layout: [Botão + Logo] - [Barra de pesquisa] - [Ícones]
-        */}
+        {/* Layout: [Botão + Logo] - [Barra de pesquisa] - [Ícones] */}
         <div className="flex flex-col items-center gap-4 md:grid md:grid-cols-[auto,1fr,auto]">
           {/* Parte esquerda: hambúrguer + logo */}
           <div className="flex items-center justify-between w-full md:w-auto">
