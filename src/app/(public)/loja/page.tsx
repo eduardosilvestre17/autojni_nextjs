@@ -1,23 +1,203 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import ProductCard, { Product } from "@/components/ProductCard";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
+/**
+ * ===========================
+ * Componente PriceRangeSlider
+ * ===========================
+ * - Renderiza uma trilha (track),
+ * - Renderiza a faixa colorida entre min e max,
+ * - Renderiza duas "bolinhas" (thumbs) que podem ser arrastadas.
+ */
+interface PriceRangeSliderProps {
+  minPrice: number;
+  maxPrice: number;
+  onChange: (newMin: number, newMax: number) => void;
+  minLimit: number; // Ex: 0
+  maxLimit: number; // Ex: 1000
+}
+
+function PriceRangeSlider({
+  minPrice,
+  maxPrice,
+  onChange,
+  minLimit,
+  maxLimit,
+}: PriceRangeSliderProps) {
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const [draggingThumb, setDraggingThumb] = useState<"min" | "max" | null>(
+    null
+  );
+
+  // Função auxiliar: dado um valor (ex: minPrice) converte para % da largura
+  const valueToPercent = useCallback(
+    (value: number) => {
+      return ((value - minLimit) / (maxLimit - minLimit)) * 100;
+    },
+    [minLimit, maxLimit]
+  );
+
+  // Função auxiliar: dado um pixel X no container, converte para valor do slider
+  const pixelToValue = useCallback(
+    (x: number) => {
+      if (!sliderRef.current) return minLimit;
+      const rect = sliderRef.current.getBoundingClientRect();
+      const width = rect.width;
+      // Garante que x fique dentro [0, width]
+      const clampedX = Math.max(0, Math.min(x - rect.left, width));
+      // Converte a posição em pixels para o range de valores
+      const percent = clampedX / width; // entre 0 e 1
+      return Math.round(minLimit + percent * (maxLimit - minLimit));
+    },
+    [minLimit, maxLimit]
+  );
+
+  // Lida com o mouse/touch movendo
+  const handleMove = useCallback(
+    (clientX: number) => {
+      if (!draggingThumb) return;
+      // Convertemos a posição do mouse para o valor do slider
+      const newValue = pixelToValue(clientX);
+
+      if (draggingThumb === "min") {
+        // Não pode ultrapassar o maxPrice
+        const bounded = Math.min(newValue, maxPrice);
+        onChange(bounded, maxPrice);
+      } else {
+        // draggingThumb === "max"
+        // Não pode ser menor que minPrice
+        const bounded = Math.max(newValue, minPrice);
+        onChange(minPrice, bounded);
+      }
+    },
+    [draggingThumb, pixelToValue, minPrice, maxPrice, onChange]
+  );
+
+  // Ao clicar/segurar na "bolinha"
+  const handleMouseDown = (
+    thumb: "min" | "max",
+    e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>
+  ) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setDraggingThumb(thumb);
+    if ("clientX" in e) {
+      // MouseEvent
+      handleMove(e.clientX);
+    } else {
+      // TouchEvent
+      handleMove(e.touches[0].clientX);
+    }
+  };
+
+  // Ao soltar
+  const handleEnd = useCallback(() => {
+    setDraggingThumb(null);
+  }, []);
+
+  // Listeners globais de mouse/touch
+  React.useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!draggingThumb) return;
+      handleMove(e.clientX);
+    };
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!draggingThumb) return;
+      handleMove(e.touches[0].clientX);
+    };
+    const handleUp = () => handleEnd();
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleUp);
+    window.addEventListener("touchmove", handleTouchMove);
+    window.addEventListener("touchend", handleUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleUp);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleUp);
+    };
+  }, [draggingThumb, handleMove, handleEnd]);
+
+  // Cálculo de posições (em %) para cada thumb
+  const leftPercent = valueToPercent(minPrice);
+  const rightPercent = valueToPercent(maxPrice);
+
+  return (
+    <div ref={sliderRef} className="relative w-full h-6">
+      {/* Trilha de fundo */}
+      <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-2 bg-gray-300 rounded pointer-events-none" />
+
+      {/* Faixa colorida entre min e max */}
+      <div
+        className="absolute top-1/2 -translate-y-1/2 h-2 bg-blue-500 rounded pointer-events-none"
+        style={{
+          left: `${Math.min(leftPercent, rightPercent)}%`,
+          width: `${Math.abs(rightPercent - leftPercent)}%`,
+        }}
+      />
+
+      {/* Thumb do min */}
+      <div
+        className="absolute w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow-md cursor-pointer"
+        style={{
+          top: "50%",
+          left: `${leftPercent}%`,
+          transform: "translate(-50%, -50%)",
+        }}
+        onMouseDown={(e) => handleMouseDown("min", e)}
+        onTouchStart={(e) => handleMouseDown("min", e)}
+      />
+
+      {/* Thumb do max */}
+      <div
+        className="absolute w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow-md cursor-pointer"
+        style={{
+          top: "50%",
+          left: `${rightPercent}%`,
+          transform: "translate(-50%, -50%)",
+        }}
+        onMouseDown={(e) => handleMouseDown("max", e)}
+        onTouchStart={(e) => handleMouseDown("max", e)}
+      />
+    </div>
+  );
+}
+
+/**
+ * =====================
+ * Página principal (Loja)
+ * =====================
+ */
 export default function LojaPage() {
   const [showFilters, setShowFilters] = useState(true);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [showOrderDropdown, setShowOrderDropdown] = useState(false);
+
+  // Collapses dos filtros
   const [dispOpen, setDispOpen] = useState(true);
   const [marcaOpen, setMarcaOpen] = useState(true);
+  const [priceOpen, setPriceOpen] = useState(true);
+
+  // Estados para o valor mínimo e máximo do preço
+  const [minPrice, setMinPrice] = useState(0);
+  const [maxPrice, setMaxPrice] = useState(1000);
+
+  // Ordenação
   const [orderBy, setOrderBy] = useState("");
 
+  // Lógica de busca
   const sp = useSearchParams();
   const searchTerm = sp?.get("search") ?? "";
 
+  // Endpoint SWR
   const endpoint = searchTerm.trim()
     ? `/api/products?search=${encodeURIComponent(searchTerm)}`
     : "/api/products";
@@ -26,10 +206,9 @@ export default function LojaPage() {
     refreshInterval: 5000,
   });
 
-  const toggleFilters = () => {
-    setShowFilters((prev) => !prev);
-  };
+  const toggleFilters = () => setShowFilters((prev) => !prev);
 
+  // SWR: erros e loading
   if (error) {
     return (
       <section className="p-4">
@@ -73,8 +252,12 @@ export default function LojaPage() {
     setShowOrderDropdown(false);
   };
 
+  /**
+   * Conteúdo do menu de filtros (aside), incluindo a Faixa de Preço
+   */
   const FiltersAsideContent = (
     <>
+      {/* Disponibilidade */}
       <div className="mb-6">
         <div
           className="flex items-center justify-between mb-2 cursor-pointer"
@@ -112,7 +295,8 @@ export default function LojaPage() {
         </div>
       </div>
 
-      <div>
+      {/* Marca */}
+      <div className="mb-6">
         <div
           className="flex items-center justify-between mb-2 cursor-pointer"
           onClick={() => setMarcaOpen(!marcaOpen)}
@@ -159,11 +343,51 @@ export default function LojaPage() {
           </a>
         </div>
       </div>
+
+      {/* Faixa de Preço (usando componente customizado) */}
+      <div className="mb-6">
+        <div
+          className="flex items-center justify-between mb-2 cursor-pointer"
+          onClick={() => setPriceOpen(!priceOpen)}
+        >
+          <h2 className="text-base font-semibold text-foreground dark:text-dark-foreground">
+            Faixa de Preço
+          </h2>
+          <span className="text-3xl text-gray-500 select-none hover:text-gray-700 transition-colors">
+            {priceOpen ? "−" : "+"}
+          </span>
+        </div>
+
+        <div
+          className={`transition-all duration-300 overflow-hidden ${
+            priceOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+          }`}
+        >
+          {/* Texto mostrando min e max */}
+          <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mt-2 mb-1 px-1">
+            <span>Mínimo: {minPrice}€</span>
+            <span>Máximo: {maxPrice}€</span>
+          </div>
+
+          <PriceRangeSlider
+            minPrice={minPrice}
+            maxPrice={maxPrice}
+            onChange={(newMin, newMax) => {
+              setMinPrice(newMin);
+              setMaxPrice(newMax);
+            }}
+            minLimit={0}
+            maxLimit={1000}
+          />
+        </div>
+      </div>
     </>
   );
 
+  // Render principal da Loja
   return (
     <section className="p-4">
+      {/* Filtros e Ordenação (Mobile) */}
       <div className="md:hidden mb-4 flex flex-col gap-2 w-full">
         <div className="flex gap-2 w-full">
           <button
@@ -227,6 +451,8 @@ export default function LojaPage() {
           {totalResults} resultado{totalResults !== 1 && "s"}.
         </p>
       </div>
+
+      {/* Menu lateral de filtros (Mobile) */}
       {mobileFilterOpen && (
         <>
           <div
@@ -248,6 +474,8 @@ export default function LojaPage() {
           </aside>
         </>
       )}
+
+      {/* Filtros e ordenação (Desktop) */}
       <div className="hidden md:flex items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-3">
           <button
@@ -280,16 +508,21 @@ export default function LojaPage() {
           </select>
         </div>
       </div>
+
+      {/* Layout principal: Filtros (se visíveis) + Grid de produtos */}
       <div
         className={`grid gap-6 transition-[grid-template-columns] duration-300 ease-in-out ${
           showFilters ? "grid-cols-1 md:grid-cols-[260px_1fr]" : "grid-cols-1"
         }`}
       >
+        {/* Filtro lateral (Desktop) */}
         {showFilters && (
           <aside className="bg-white dark:bg-gray-800 p-4 rounded shadow self-start hidden md:block">
             {FiltersAsideContent}
           </aside>
         )}
+
+        {/* Lista de produtos */}
         <main>
           <div className="grid gap-4 xs:grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {arrayData.map((product: Product) => (
@@ -298,6 +531,12 @@ export default function LojaPage() {
           </div>
         </main>
       </div>
+
+      {/* Estilos extras apenas p/ visual */}
+      <style jsx>{`
+        /* Só para deixar a "bolinha" mais bonita, sem estilos default de input */
+        /* As 'div' que usamos para as thumbs já têm classe e cursor pointer */
+      `}</style>
     </section>
   );
 }
