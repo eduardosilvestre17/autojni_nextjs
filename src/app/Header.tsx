@@ -103,9 +103,10 @@ export default function Header() {
         target="_blank"
         rel="noopener noreferrer"
         className="flex items-center gap-2 p-2
-                   text-primary dark:text-primary
-                   hover:text-myOrange dark:hover:text-myOrange
-                   transition-colors"
+             text-[#f15a3a]
+             transition-colors
+             hover:text-[#9b3d2a]
+             active:text-[#f15a3a]"
       >
         {/* Ícone maior; texto "Visite-nos" só aparece em telas md ou maiores */}
         <i className="fa-solid fa-location-dot text-xl md:text-2xl" />
