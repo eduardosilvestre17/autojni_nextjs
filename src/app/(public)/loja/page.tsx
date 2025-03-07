@@ -14,9 +14,10 @@ const fetcher = (url: string) => fetch(url).then((r) => r.json());
  * ===========================
  * Componente PriceRangeSlider
  * ===========================
- * - Calcula e salva a largura do slider (em px) ao montar,
+ * - Calcula e salva a largura do slider (px) ao montar,
  * - Faz o clamp do movimento em px para que a bolinha não saia,
- * - Converte valor -> px e px -> valor.
+ * - Converte valor -> px e px -> valor,
+ * - Desenha a faixa colorida de ponta a ponta das bolinhas.
  */
 interface PriceRangeSliderProps {
   minPrice: number;
@@ -54,15 +55,13 @@ function PriceRangeSlider({
     }
   }, []);
 
-  // Converte valor (0..1000) -> posição em px no slider
+  // Converte valor (0..1000) -> posição em px no slider (lado ESQUERDO da bolinha)
   const valueToPx = useCallback(
     (value: number) => {
       if (sliderWidth <= 0) return 0;
-
       // Fração de 0..1
       const fraction = (value - minLimit) / (maxLimit - minLimit);
-      // Posição em px (lado esquerdo da bolinha)
-      // Ela pode ir de 0 até (sliderWidth - thumbDiameter)
+      // Posição em px, variando de 0 até (sliderWidth - thumbDiameter)
       return fraction * (sliderWidth - thumbDiameter);
     },
     [sliderWidth, minLimit, maxLimit, thumbDiameter]
@@ -72,16 +71,15 @@ function PriceRangeSlider({
   const pxToValue = useCallback(
     (px: number) => {
       if (sliderWidth <= 0) return minLimit;
-
       // Fração de 0..1 com base na posição
       const fraction = px / (sliderWidth - thumbDiameter);
-      // Mapeia para o range minLimit..maxLimit
+      // Mapeia para o range [minLimit..maxLimit]
       return Math.round(minLimit + fraction * (maxLimit - minLimit));
     },
     [sliderWidth, minLimit, maxLimit, thumbDiameter]
   );
 
-  // Ao arrastar, pega o x do mouse/touch e converte p/ valor
+  // Ao arrastar, pega o X do mouse/touch e converte p/ valor
   const handleMove = useCallback(
     (clientX: number) => {
       if (!draggingThumb) return;
@@ -92,7 +90,7 @@ function PriceRangeSlider({
       const x = clientX - rect.left;
 
       // Clampa esse x para [0 .. sliderWidth - thumbDiameter],
-      // para que a bolinha não saia pelos limites
+      // garantindo que a bola não ultrapasse os limites
       const clampedX = Math.max(0, Math.min(x, sliderWidth - thumbDiameter));
 
       // Converte px -> valor
@@ -169,22 +167,27 @@ function PriceRangeSlider({
   const minPx = valueToPx(minPrice);
   const maxPx = valueToPx(maxPrice);
 
-  // Para a faixa colorida (entre min e max):
-  const leftTrack = Math.min(minPx, maxPx);
-  const widthTrack = Math.abs(maxPx - minPx);
+  // Queremos que a faixa colorida vá do lado esquerdo da bola de menor valor
+  // até o lado direito da bola de maior valor = left + thumbDiameter
+  const leftEdge = Math.min(minPx, maxPx);
+  const rightEdge = Math.max(minPx, maxPx) + thumbDiameter;
+
+  // Clampa o lado direito para não exceder o sliderWidth
+  const trackLeft = Math.max(0, leftEdge); // normalmente 0
+  const trackRight = Math.min(sliderWidth, rightEdge);
+  const trackWidth = Math.max(0, trackRight - trackLeft);
 
   return (
-    // Removido padding lateral: queremos que a bolinha vá até a borda do container
     <div ref={sliderRef} className="relative w-full h-6">
-      {/* Trilha de fundo (100% da largura) */}
+      {/* Trilha de fundo */}
       <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-2 bg-gray-300 rounded pointer-events-none" />
 
-      {/* Faixa colorida entre minPx e maxPx */}
+      {/* Faixa colorida: do lado esquerdo da bola min até o lado direito da bola max */}
       <div
         className="absolute top-1/2 -translate-y-1/2 h-2 bg-blue-500 rounded pointer-events-none"
         style={{
-          left: `${leftTrack}px`,
-          width: `${widthTrack}px`,
+          left: `${trackLeft}px`,
+          width: `${trackWidth}px`,
         }}
       />
 
@@ -192,8 +195,7 @@ function PriceRangeSlider({
       <div
         className="absolute w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow-md cursor-pointer"
         style={{
-          // Aqui o left é o lado esquerdo da bolinha, sem translateX(-50%)
-          left: `${minPx}px`,
+          left: `${minPx}px`, // lado esquerdo da bolinha
           top: "50%",
           transform: "translateY(-50%)",
         }}
@@ -300,7 +302,8 @@ export default function LojaPage() {
   };
 
   /**
-   * Filtros (aside)
+   * Conteúdo do menu de filtros (aside):
+   * Disponibilidade -> Preço -> Marca
    */
   const FiltersAsideContent = (
     <>
