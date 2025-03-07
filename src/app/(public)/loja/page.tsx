@@ -5,6 +5,9 @@ import { useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import ProductCard, { Product } from "@/components/ProductCard";
 
+// IMPORTAMOS O SELECTINPUT AQUI
+import { SelectInput } from "@/components/SelectInput";
+
 /**
  * Função fetcher para uso com SWR
  */
@@ -97,10 +100,8 @@ function PriceRangeSlider({
       const newValue = pxToValue(clampedX);
 
       if (draggingThumb === "min") {
-        // Nunca deixa o min passar do max
         onChange(Math.min(newValue, maxPrice), maxPrice);
       } else {
-        // Nunca deixa o max ir abaixo do min
         onChange(minPrice, Math.max(newValue, minPrice));
       }
     },
@@ -163,16 +164,12 @@ function PriceRangeSlider({
   // =================================
   // Renderização das bolinhas e da faixa
   // =================================
-  // Posições em px (0..sliderWidth - thumbDiameter)
   const minPx = valueToPx(minPrice);
   const maxPx = valueToPx(maxPrice);
 
-  // Queremos que a faixa colorida vá do lado esquerdo da bola de menor valor
-  // até o lado direito da bola de maior valor = left + thumbDiameter
   const leftEdge = Math.min(minPx, maxPx);
   const rightEdge = Math.max(minPx, maxPx) + thumbDiameter;
 
-  // Clampa o lado direito para não exceder o sliderWidth
   const trackLeft = Math.max(0, leftEdge);
   const trackRight = Math.min(sliderWidth, rightEdge);
   const trackWidth = Math.max(0, trackRight - trackLeft);
@@ -182,7 +179,7 @@ function PriceRangeSlider({
       {/* Trilha de fundo */}
       <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-2 bg-gray-300 rounded pointer-events-none" />
 
-      {/* Faixa colorida: do lado esquerdo da bola min até o lado direito da bola max */}
+      {/* Faixa colorida */}
       <div
         className="absolute top-1/2 -translate-y-1/2 h-2 bg-blue-500 rounded pointer-events-none"
         style={{
@@ -191,7 +188,7 @@ function PriceRangeSlider({
         }}
       />
 
-      {/* Thumb do min (envolta em div extra p/ aumentar hitbox no mobile) */}
+      {/* Thumb do min */}
       <div
         className="absolute"
         style={{
@@ -200,9 +197,7 @@ function PriceRangeSlider({
           transform: "translateY(-50%)",
         }}
       >
-        {/* Bolinha visível, sem pointer events */}
         <div className="relative w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow-md pointer-events-none" />
-        {/* Área extra de clique para mobile (a -m-2 retira margin, expandindo) */}
         <div
           className="absolute inset-0 -m-2 md:-m-0 cursor-pointer"
           onMouseDown={(e) => handleStartDrag("min", e)}
@@ -210,7 +205,7 @@ function PriceRangeSlider({
         />
       </div>
 
-      {/* Thumb do max (mesma ideia) */}
+      {/* Thumb do max */}
       <div
         className="absolute"
         style={{
@@ -552,24 +547,24 @@ export default function LojaPage() {
             {totalResults} resultado{totalResults !== 1 && "s"}.
           </p>
         </div>
+        {/* AQUI USAMOS O SELECTINPUT NO DESKTOP */}
         <div className="flex items-center gap-2">
-          <label
-            htmlFor="orderBy"
-            className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap"
-          >
+          <span className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
             Ordenar por:
-          </label>
-          <select
-            id="orderBy"
-            className="border border-gray-300 dark:border-gray-700 rounded px-2 py-1 bg-white dark:bg-gray-800 text-foreground dark:text-dark-foreground"
-            value={orderBy}
-            onChange={(e) => setOrderBy(e.target.value)}
-          >
-            <option value="relevancia">Relevância</option>
-            <option value="menor-preco">Menor Preço</option>
-            <option value="maior-preco">Maior Preço</option>
-            <option value="mais-recentes">Mais Recentes</option>
-          </select>
+          </span>
+          <div className="w-52">
+            <SelectInput
+              options={[
+                { label: "Relevância", value: "relevancia" },
+                { label: "Menor Preço", value: "menor-preco" },
+                { label: "Maior Preço", value: "maior-preco" },
+                { label: "Mais Recentes", value: "mais-recentes" },
+              ]}
+              value={orderBy}
+              onChange={(val) => setOrderBy(val)}
+              placeholder="Selecione..."
+            />
+          </div>
         </div>
       </div>
 
