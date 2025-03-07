@@ -14,8 +14,9 @@ const fetcher = (url: string) => fetch(url).then((r) => r.json());
  * ===========================
  * Componente PriceRangeSlider
  * ===========================
- * - Faz o cálculo em pixels e bloqueia o arrasto das bolinhas quando
- *   a extremidade delas toca a borda do slider.
+ * - Renderiza uma trilha (track),
+ * - Renderiza a faixa colorida entre min e max,
+ * - Renderiza duas "bolinhas" (thumbs) que podem ser arrastadas.
  */
 interface PriceRangeSliderProps {
   minPrice: number;
@@ -37,67 +38,34 @@ function PriceRangeSlider({
     null
   );
 
-  /**
-   * Converte a posição do mouse/touch (em px) para um "valor" (de minLimit a maxLimit),
-   * bloqueando o centro da bolinha nos limites (8px e width-8px).
-   */
+  // Converte um valor (ex: 0 a 1000) para porcentagem (0% a 100%)
+  const valueToPercent = useCallback(
+    (value: number) => {
+      return ((value - minLimit) / (maxLimit - minLimit)) * 100;
+    },
+    [minLimit, maxLimit]
+  );
+
+  // Converte a posição do mouse/touch (em px) dentro do slider para um valor
   const pixelToValue = useCallback(
     (clientX: number) => {
       if (!sliderRef.current) return minLimit;
-
       const rect = sliderRef.current.getBoundingClientRect();
-      const sliderLeft = rect.left;
-      const sliderRight = rect.right; // left + width
-      const sliderWidth = rect.width;
+      const width = rect.width;
 
-      const ballRadius = 8; // se a bolinha tem 16px de diâmetro, o raio é 8px
+      // Garante que o X fique dentro do range [0, width]
+      const clampedX = Math.max(0, Math.min(clientX - rect.left, width));
 
-      // Definimos os limites para o CENTRO da bolinha
-      const leftBoundary = sliderLeft + ballRadius;
-      const rightBoundary = sliderRight - ballRadius;
+      // Converte para percent
+      const percent = clampedX / width;
 
-      // Garante que o X fique dentro do range [leftBoundary, rightBoundary]
-      const clampedX = Math.max(leftBoundary, Math.min(clientX, rightBoundary));
-
-      // Quantos pixels de faixa efetiva (centro da bola) há para arrastar
-      const effectiveWidth = rightBoundary - leftBoundary;
-
-      // Converte para um valor [0..1]
-      const percent = (clampedX - leftBoundary) / effectiveWidth;
-
-      // Converte esse percent para o valor real
+      // Converte para o valor real e arredonda
       return Math.round(minLimit + percent * (maxLimit - minLimit));
     },
     [minLimit, maxLimit]
   );
 
-  /**
-   * Converte um valor (ex: 0..1000) em posição X em pixels dentro do slider,
-   * levando em conta os 8px de cada lado onde o centro da bolinha não pode passar.
-   */
-  const valueToPixel = useCallback(
-    (value: number) => {
-      if (!sliderRef.current) return 0;
-      const rect = sliderRef.current.getBoundingClientRect();
-      const sliderWidth = rect.width;
-
-      const ballRadius = 8;
-      const leftBoundary = 0 + ballRadius; // dentro do container
-      const rightBoundary = sliderWidth - ballRadius;
-
-      // Primeiro, convertemos o valor num "percent" [0..1] dentro do range
-      const ratio = (value - minLimit) / (maxLimit - minLimit);
-
-      // Clamp para evitar desvios se minPrice<minLimit ou maxPrice>maxLimit
-      const clampedRatio = Math.max(0, Math.min(ratio, 1));
-
-      // Daí calculamos a posição em px para o centro da bolinha
-      return leftBoundary + clampedRatio * (rightBoundary - leftBoundary);
-    },
-    [minLimit, maxLimit]
-  );
-
-  // Atualiza o minPrice ou maxPrice ao arrastar
+  // Função para atualizar a posição ao arrastar
   const handleMove = useCallback(
     (clientX: number) => {
       if (!draggingThumb) return;
@@ -160,26 +128,23 @@ function PriceRangeSlider({
     };
   }, [draggingThumb, handleMove, handleEndDrag]);
 
-  // Calcula em pixels onde estarão as duas bolinhas
-  const minPx = valueToPixel(minPrice);
-  const maxPx = valueToPixel(maxPrice);
-
-  // Para a faixa colorida, pegamos left e width em px
-  const leftFill = Math.min(minPx, maxPx);
-  const widthFill = Math.abs(maxPx - minPx);
+  // Calcula as posições em % (entre 0 e 100)
+  const leftPercent = valueToPercent(minPrice);
+  const rightPercent = valueToPercent(maxPrice);
 
   return (
-    // overflow-visible se você quiser que as bolinhas não sejam "cortadas"
-    <div ref={sliderRef} className="relative w-full h-6 overflow-visible">
-      {/* Trilha de fundo (0..100% do container) */}
+    // Repare no "px-2": isso adiciona 8px de padding em cada lado,
+    // para as bolinhas ficarem dentro dos limites sem serem cortadas.
+    <div ref={sliderRef} className="relative w-full h-6 px-2">
+      {/* Trilha de fundo */}
       <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-2 bg-gray-300 rounded pointer-events-none" />
 
       {/* Faixa colorida entre min e max */}
       <div
         className="absolute top-1/2 -translate-y-1/2 h-2 bg-blue-500 rounded pointer-events-none"
         style={{
-          left: `${leftFill}px`,
-          width: `${widthFill}px`,
+          left: `${Math.min(leftPercent, rightPercent)}%`,
+          width: `${Math.abs(rightPercent - leftPercent)}%`,
         }}
       />
 
@@ -188,7 +153,7 @@ function PriceRangeSlider({
         className="absolute w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow-md cursor-pointer"
         style={{
           top: "50%",
-          left: `${minPx}px`,
+          left: `${leftPercent}%`,
           transform: "translate(-50%, -50%)",
         }}
         onMouseDown={(e) => handleStartDrag("min", e)}
@@ -200,7 +165,7 @@ function PriceRangeSlider({
         className="absolute w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow-md cursor-pointer"
         style={{
           top: "50%",
-          left: `${maxPx}px`,
+          left: `${rightPercent}%`,
           transform: "translate(-50%, -50%)",
         }}
         onMouseDown={(e) => handleStartDrag("max", e)}
@@ -285,6 +250,7 @@ export default function LojaPage() {
 
   // Agora data é um array
   const arrayData = data;
+  // Declare totalResults apenas 1 vez
   const totalResults = arrayData.length;
 
   // Função para ordenar via mobile
@@ -339,7 +305,7 @@ export default function LojaPage() {
         </div>
       </div>
 
-      {/* Faixa de Preço */}
+      {/* Faixa de Preço (após Disponibilidade, antes de Marca) */}
       <div className="mb-6">
         <div
           className="flex items-center justify-between mb-2 cursor-pointer"
@@ -376,7 +342,7 @@ export default function LojaPage() {
         </div>
       </div>
 
-      {/* Marca */}
+      {/* Marca (agora depois da Faixa de Preço) */}
       <div className="mb-6">
         <div
           className="flex items-center justify-between mb-2 cursor-pointer"
