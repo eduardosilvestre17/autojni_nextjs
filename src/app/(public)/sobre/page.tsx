@@ -8,7 +8,7 @@ import avatar3 from "@/app/images/reviews/3.png";
 import avatar4 from "@/app/images/reviews/4.png";
 
 // Importa os dois botões
-import { PrimaryButton, SecondaryButton } from "@/components/Buttons";
+import { PrimaryButton } from "@/components/Buttons";
 
 const reviews = [
   {

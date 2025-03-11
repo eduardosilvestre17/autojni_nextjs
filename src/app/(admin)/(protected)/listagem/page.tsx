@@ -29,32 +29,39 @@ function matchAllWords(userText: string, target: string): boolean {
   return true;
 }
 
-/** Converte "T" em "Ativo" e "F" em "Inativo". */
-function getActiveText(active: string) {
-  return active === "T" ? "Ativo" : active === "F" ? "Inativo" : active;
+/** Converte `active: boolean` em texto "Ativo"/"Inativo". */
+function getActiveText(active: boolean) {
+  return active ? "Ativo" : "Inativo";
 }
 
-/** Converte "N" em "Normal" e "S" em "Serviço". */
+/** Ajusta o campo `articleType` caso ele seja "N"/"S", ou "Normal"/"Serviço". */
 function getArticleTypeText(type: string) {
-  return type === "N" ? "Normal" : type === "S" ? "Serviço" : type;
+  if (type === "N") return "Normal";
+  if (type === "S") return "Serviço";
+  // Se já é "Normal"/"Serviço", retorna o próprio
+  return type || "";
 }
 
 export default function ArticlesPage() {
-  // Pesquisa em tempo real (fuzzy)
+  // Estado de busca
   const [typingSearch, setTypingSearch] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Dados para carregamento rápido (primeira página) e carregamento completo
+  // Armazena artigos iniciais (10) e completos
   const [initialArticles, setInitialArticles] = useState<any[]>([]);
   const [fullArticles, setFullArticles] = useState<any[]>([]);
   const [allArticlesLoaded, setAllArticlesLoaded] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
 
-  // Controle de carregamento e erro
+  // Controle de loading e erro
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Debounce de 300ms para atualizar o searchTerm
+  // Controle de sincronização (manual/automático)
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [syncMessage, setSyncMessage] = useState("");
+
+  // Debounce de 300ms para `typingSearch`
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearchTerm(typingSearch);
@@ -63,22 +70,18 @@ export default function ArticlesPage() {
   }, [typingSearch]);
 
   /**
-   * Carrega rapidamente apenas a primeira página de artigos (ex: 10 itens).
+   * Busca 10 artigos do DB local (rota interna)
    */
   async function fetchInitialArticles() {
     setLoading(true);
     setError("");
     try {
-      const username = "userapi";
-      const password = "1c4a331908e1e5feb96ccba9e82c1b2e8d28f9bb";
-      const headers = new Headers();
-      headers.set("Authorization", `Basic ${btoa(`${username}:${password}`)}`);
-      const url = `https://autojni.officegest.com/api/stocks/articles?limit=10&offset=0`;
-      const response = await fetch(url, { headers });
-      if (!response.ok) {
-        throw new Error("Erro ao buscar artigos (primeira página)");
+      // A rota deve retornar algo como { articles: [...], total: number }
+      const res = await fetch("/api/articles?limit=10&offset=0");
+      if (!res.ok) {
+        throw new Error("Erro ao buscar artigos iniciais do DB");
       }
-      const data = await response.json();
+      const data = await res.json();
       setInitialArticles(data.articles || []);
       setTotalCount(data.total || 0);
     } catch (err: any) {
@@ -89,22 +92,15 @@ export default function ArticlesPage() {
   }
 
   /**
-   * Carrega em segundo plano todos os artigos (sem limite),
-   * para permitir pesquisa completa e paginação interna do AdminTable.
-   * Esse carregamento ocorre sem exibir mensagens extras.
+   * Busca TODOS os artigos do DB local (rota interna)
    */
   async function fetchFullArticles() {
     try {
-      const username = "userapi";
-      const password = "1c4a331908e1e5feb96ccba9e82c1b2e8d28f9bb";
-      const headers = new Headers();
-      headers.set("Authorization", `Basic ${btoa(`${username}:${password}`)}`);
-      const url = `https://autojni.officegest.com/api/stocks/articles?limit=999999&offset=0`;
-      const response = await fetch(url, { headers });
-      if (!response.ok) {
-        throw new Error("Erro ao buscar artigos (completo)");
+      const res = await fetch("/api/articles?limit=999999&offset=0");
+      if (!res.ok) {
+        throw new Error("Erro ao buscar todos os artigos do DB");
       }
-      const data = await response.json();
+      const data = await res.json();
       setFullArticles(data.articles || []);
       setAllArticlesLoaded(true);
     } catch (err) {
@@ -112,59 +108,114 @@ export default function ArticlesPage() {
     }
   }
 
-  // Carrega a primeira página ao montar o componente
+  // Ao montar, busca inicialmente 10 e, em segundo plano, todos
   useEffect(() => {
     fetchInitialArticles();
-  }, []);
-
-  // Carrega todos os artigos em segundo plano (sem interromper a experiência do usuário)
-  useEffect(() => {
     fetchFullArticles();
   }, []);
 
-  // Se os dados completos estiverem carregados, usa-os; senão, usa os iniciais
+  /**
+   * Botão/função de Sincronizar (chama /api/officegest/sync)
+   */
+  async function handleSync() {
+    setSyncLoading(true);
+    setSyncMessage("");
+    try {
+      const res = await fetch("/api/officegest/sync");
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Erro na sincronização");
+      }
+      setSyncMessage(data.message || "Sincronização concluída!");
+
+      // Recarrega os artigos após sincronizar
+      await fetchInitialArticles();
+      await fetchFullArticles();
+
+      // Salva timestamp no localStorage para o agendamento
+      localStorage.setItem("lastSyncTimestamp", Date.now().toString());
+    } catch (err: any) {
+      setSyncMessage(err.message);
+    } finally {
+      setSyncLoading(false);
+    }
+  }
+
+  /**
+   * Agendamento automático: se passaram 12h desde a última sync?
+   */
+  useEffect(() => {
+    const lastSync = localStorage.getItem("lastSyncTimestamp");
+    const twelveHours = 12 * 60 * 60 * 1000;
+    if (lastSync) {
+      const lastSyncTime = parseInt(lastSync, 10);
+      const now = Date.now();
+      if (now - lastSyncTime >= twelveHours) {
+        handleSync();
+      }
+    } else {
+      // Primeira sincronização
+      handleSync();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Decide se exibe os 10 iniciais ou todos
   const articlesToFilter = allArticlesLoaded ? fullArticles : initialArticles;
 
-  // Filtro fuzzy pela descrição OU pelo ID
+  // Filtro fuzzy
   const filteredArticles = useMemo(() => {
     if (!searchTerm) return articlesToFilter;
     return articlesToFilter.filter((article) => {
-      // Verifica match na descrição
       const matchDescription = matchAllWords(
         searchTerm,
         article.description || ""
       );
-      // Verifica match no ID (convertendo para string)
       const matchId = matchAllWords(searchTerm, String(article.id || ""));
-
       return matchDescription || matchId;
     });
   }, [articlesToFilter, searchTerm]);
 
-  // Ajusta os valores de "articletype" e "active" para exibir textos amigáveis
+  // Ajusta o articleType e active para exibir "Normal"/"Serviço" e "Ativo"/"Inativo"
   const processedArticles = useMemo(() => {
     return filteredArticles.map((article) => ({
       ...article,
-      articletype: getArticleTypeText(article.articletype),
-      active: getActiveText(article.active),
+      articletype: getArticleTypeText(article.articleType || ""),
+      active: getActiveText(!!article.active),
     }));
   }, [filteredArticles]);
 
-  // Definição das colunas para o AdminTable
+  // Colunas para o AdminTable
   const columns = [
     { key: "id", label: "ID" },
     { key: "description", label: "Descrição" },
     { key: "articletype", label: "Tipo" },
-    { key: "purchasingprice", label: "Preço Compra" },
-    { key: "sellingprice", label: "Preço Venda" },
+    { key: "purchasingPrice", label: "Preço Compra" },
+    { key: "sellingPrice", label: "Preço Venda" },
     { key: "active", label: "Ativo" },
     { key: "brand", label: "Marca" },
-    { key: "stock_quantity", label: "Stock" },
+    { key: "stockQuantity", label: "Stock" },
   ];
 
   return (
     <div className="container max-w-5xl mx-auto px-4 py-6 bg-search-bg rounded shadow dark:bg-search-bg-dark text-foreground dark:text-dark-foreground">
       <h1 className="text-2xl font-bold mb-4">Lista de Artigos</h1>
+
+      {/* Botão de sincronizar */}
+      <div className="mb-4 flex items-center gap-3">
+        <button
+          onClick={handleSync}
+          disabled={syncLoading}
+          className="border border-gray-300 rounded px-4 py-2 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        >
+          {syncLoading ? "Sincronizando..." : "Sincronizar"}
+        </button>
+        {syncMessage && (
+          <span className="text-sm text-gray-600 dark:text-gray-300">
+            {syncMessage}
+          </span>
+        )}
+      </div>
 
       {/* Campo de pesquisa */}
       <div className="mb-4">
@@ -177,8 +228,12 @@ export default function ArticlesPage() {
         />
       </div>
 
-      {loading && <p>Carregando...</p>}
+      {loading && <p>Carregando (inicial)...</p>}
       {error && <p className="text-red-500">Erro: {error}</p>}
+
+      <p className="mb-2 text-sm text-gray-500">
+        Total no banco (aprox.): {totalCount}
+      </p>
 
       <div className="w-full overflow-x-auto">
         <AdminTable

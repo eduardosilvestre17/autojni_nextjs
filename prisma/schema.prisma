@@ -1,5 +1,3 @@
-// prisma/schema.prisma
-
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
@@ -18,47 +16,15 @@ model User {
   createdAt DateTime @default(now())
 }
 
-model Product {
-  id                  String   @id @default(uuid())
-  titulo              String
-  referencia          String
-  tipoProduto         String?
-  descricaoCurta      String?
-  descricaoCompleta   String?
-  peso                Decimal? @db.Decimal(10, 2)
-  hasMedidas          Boolean  @default(false)
-  medidas             String?
-  stock               Int      @default(0)
-  vendasExtraStock    Boolean  @default(false)
-  unidade             String?
-  taxaImposto         Decimal? @db.Decimal(5, 2)
-  qtdMinima           Int      @default(0)
-  produtoFragil       Boolean  @default(false)
-  permitirUpload      Boolean  @default(false)
-  produtoGPSR         Boolean  @default(false)
-  estado              String?
-  destaque            Boolean  @default(false)
-  novidade            Boolean  @default(false)
-  categorias          String?
-  marcas              String?
-  etiquetas           String?
-  codigoBarras        String?
-  precoCompraSemIva   Decimal? @db.Decimal(10, 2)
-  precoCompraComIva   Decimal? @db.Decimal(10, 2)
-  precoVendaSemIva    Decimal? @db.Decimal(10, 2)
-  precoVendaComIva    Decimal? @db.Decimal(10, 2)
-  margemLucro         Decimal? @db.Decimal(10, 2)
-  margemRelacional    Decimal? @db.Decimal(10, 2)
-  precoPrincipal      Decimal? @db.Decimal(10, 2)
-  precoPromocional    Decimal? @db.Decimal(10, 2)
-  usarPrecosVariacoes Boolean  @default(false)
-  variacoes           String?
-  slug                String?  @unique
-  tituloPagina        String?
-  descricaoPagina     String?
-  metatagsPagina      String?
-  especificacoes      String?
-  imagens             Json?
-
-  createdAt           DateTime @default(now())
+model Article {
+  id              String  @id
+  description     String
+  articleType     String?
+  purchasingPrice Float?
+  sellingPrice    Float?
+  active          Boolean
+  brand           String?
+  stockQuantity   Int?
+  imageUrl        String?
 }
+

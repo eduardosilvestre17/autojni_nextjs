@@ -3,13 +3,15 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import useSWR from "swr";
-import ProductCard, { Product } from "@/components/ProductCard";
-
-// IMPORTAMOS O SELECTINPUT AQUI
+import ProductCard, {
+  type Product as ProductType,
+} from "@/components/ProductCard";
 import { SelectInput } from "@/components/SelectInput";
 
 /**
+ * ===========================
  * Função fetcher para uso com SWR
+ * ===========================
  */
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -17,17 +19,13 @@ const fetcher = (url: string) => fetch(url).then((r) => r.json());
  * ===========================
  * Componente PriceRangeSlider
  * ===========================
- * - Calcula e salva a largura do slider (px) ao montar,
- * - Faz o clamp do movimento em px para que a bolinha não saia,
- * - Converte valor -> px e px -> valor,
- * - Desenha a faixa colorida de ponta a ponta das bolinhas.
  */
 interface PriceRangeSliderProps {
   minPrice: number;
   maxPrice: number;
   onChange: (newMin: number, newMax: number) => void;
-  minLimit: number; // Ex: 0
-  maxLimit: number; // Ex: 1000
+  minLimit: number;
+  maxLimit: number;
 }
 
 function PriceRangeSlider({
@@ -38,19 +36,12 @@ function PriceRangeSlider({
   maxLimit,
 }: PriceRangeSliderProps) {
   const sliderRef = useRef<HTMLDivElement>(null);
-
-  // Largura real do slider (px) - medida ao montar
   const [sliderWidth, setSliderWidth] = useState(0);
-
-  // Diâmetro da bolinha (w-4/h-4 => 16px)
   const thumbDiameter = 16;
-
-  // Qual bolinha está sendo arrastada?
   const [draggingThumb, setDraggingThumb] = useState<"min" | "max" | null>(
     null
   );
 
-  // Ao montar, mede a largura do slider e guarda em estado
   useEffect(() => {
     if (sliderRef.current) {
       const rect = sliderRef.current.getBoundingClientRect();
@@ -58,45 +49,30 @@ function PriceRangeSlider({
     }
   }, []);
 
-  // Converte valor (0..1000) -> posição em px no slider (lado ESQUERDO da bolinha)
   const valueToPx = useCallback(
     (value: number) => {
       if (sliderWidth <= 0) return 0;
-      // Fração de 0..1
       const fraction = (value - minLimit) / (maxLimit - minLimit);
-      // Posição em px, variando de 0 até (sliderWidth - thumbDiameter)
       return fraction * (sliderWidth - thumbDiameter);
     },
     [sliderWidth, minLimit, maxLimit, thumbDiameter]
   );
 
-  // Converte posição em px -> valor (0..1000)
   const pxToValue = useCallback(
     (px: number) => {
       if (sliderWidth <= 0) return minLimit;
-      // Fração de 0..1 com base na posição
       const fraction = px / (sliderWidth - thumbDiameter);
-      // Mapeia para o range [minLimit..maxLimit]
       return Math.round(minLimit + fraction * (maxLimit - minLimit));
     },
     [sliderWidth, minLimit, maxLimit, thumbDiameter]
   );
 
-  // Ao arrastar, pega o X do mouse/touch e converte p/ valor
   const handleMove = useCallback(
     (clientX: number) => {
-      if (!draggingThumb) return;
-      if (!sliderRef.current) return;
-
-      // Descobre o X relativo ao início do slider
+      if (!draggingThumb || !sliderRef.current) return;
       const rect = sliderRef.current.getBoundingClientRect();
       const x = clientX - rect.left;
-
-      // Clampa esse x para [0 .. sliderWidth - thumbDiameter],
-      // garantindo que a bola não ultrapasse os limites
       const clampedX = Math.max(0, Math.min(x, sliderWidth - thumbDiameter));
-
-      // Converte px -> valor
       const newValue = pxToValue(clampedX);
 
       if (draggingThumb === "min") {
@@ -116,7 +92,6 @@ function PriceRangeSlider({
     ]
   );
 
-  // Início do arrasto
   const handleStartDrag = (
     thumb: "min" | "max",
     e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>
@@ -132,12 +107,10 @@ function PriceRangeSlider({
     }
   };
 
-  // Fim do arrasto
   const handleEndDrag = useCallback(() => {
     setDraggingThumb(null);
   }, []);
 
-  // Listeners globais p/ mouse/touch (movimento + soltar)
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
       if (draggingThumb) handleMove(e.clientX);
@@ -161,34 +134,23 @@ function PriceRangeSlider({
     };
   }, [draggingThumb, handleMove, handleEndDrag]);
 
-  // =================================
-  // Renderização das bolinhas e da faixa
-  // =================================
   const minPx = valueToPx(minPrice);
   const maxPx = valueToPx(maxPrice);
 
   const leftEdge = Math.min(minPx, maxPx);
   const rightEdge = Math.max(minPx, maxPx) + thumbDiameter;
-
   const trackLeft = Math.max(0, leftEdge);
   const trackRight = Math.min(sliderWidth, rightEdge);
   const trackWidth = Math.max(0, trackRight - trackLeft);
 
   return (
     <div ref={sliderRef} className="relative w-full h-6">
-      {/* Trilha de fundo */}
       <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-2 bg-gray-300 rounded pointer-events-none" />
-
-      {/* Faixa colorida */}
       <div
         className="absolute top-1/2 -translate-y-1/2 h-2 bg-blue-500 rounded pointer-events-none"
-        style={{
-          left: `${trackLeft}px`,
-          width: `${trackWidth}px`,
-        }}
+        style={{ left: `${trackLeft}px`, width: `${trackWidth}px` }}
       />
-
-      {/* Thumb do min */}
+      {/* Thumb min */}
       <div
         className="absolute"
         style={{
@@ -204,8 +166,7 @@ function PriceRangeSlider({
           onTouchStart={(e) => handleStartDrag("min", e)}
         />
       </div>
-
-      {/* Thumb do max */}
+      {/* Thumb max */}
       <div
         className="absolute"
         style={{
@@ -231,7 +192,7 @@ function PriceRangeSlider({
  * =====================
  */
 export default function LojaPage() {
-  // Estados e SWR
+  // Mostrar/esconder filtros
   const [showFilters, setShowFilters] = useState(true);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [showOrderDropdown, setShowOrderDropdown] = useState(false);
@@ -241,7 +202,7 @@ export default function LojaPage() {
   const [priceOpen, setPriceOpen] = useState(true);
   const [marcaOpen, setMarcaOpen] = useState(true);
 
-  // Estados para a faixa de preço (inicialmente 0..1000)
+  // Faixa de preço
   const [minPrice, setMinPrice] = useState(0);
   const [maxPrice, setMaxPrice] = useState(1000);
 
@@ -252,17 +213,24 @@ export default function LojaPage() {
   const sp = useSearchParams();
   const searchTerm = sp?.get("search") ?? "";
 
+  // Se quiser usar "search", implemente a lógica na rota /api/articles
   const endpoint = searchTerm.trim()
-    ? `/api/products?search=${encodeURIComponent(searchTerm)}`
-    : "/api/products";
+    ? `/api/articles?search=${encodeURIComponent(searchTerm)}`
+    : "/api/articles";
 
+  // Buscamos do /api/articles, que retorna { articles: [...], total: number }
   const { data, error, isLoading } = useSWR(endpoint, fetcher, {
     refreshInterval: 5000,
   });
 
+  const handleOrderClick = (value: string) => {
+    setOrderBy(value);
+    setShowOrderDropdown(false);
+  };
+
   const toggleFilters = () => setShowFilters((prev) => !prev);
 
-  // Lidando com erros de SWR
+  // Erros e loading
   if (error) {
     return (
       <section className="p-4">
@@ -274,43 +242,49 @@ export default function LojaPage() {
     );
   }
 
-  if (isLoading || !data) {
+  if (isLoading) {
     return (
       <section className="p-4">
         <h1 className="text-2xl font-bold mb-6 text-foreground dark:text-dark-foreground">
           Loja
         </h1>
-        <p>Carregando produtos...</p>
+        <p>Carregando artigos...</p>
       </section>
     );
   }
 
-  if (!Array.isArray(data)) {
+  // Verifica se data existe e contém "articles"
+  if (!data || !data.articles) {
     return (
       <section className="p-4">
         <h1 className="text-2xl font-bold mb-6 text-red-600">
           Dados inválidos
         </h1>
-        <p>
-          A resposta da API não é um array. Verifique o retorno do endpoint.
-        </p>
+        <p>A resposta de /api/articles não contém 'articles'.</p>
       </section>
     );
   }
 
-  // Agora data é um array
-  const arrayData = data;
+  // Extrai "articles" (array) e "total" (número)
+  const { articles, total } = data;
+
+  if (!Array.isArray(articles)) {
+    return (
+      <section className="p-4">
+        <h1 className="text-2xl font-bold mb-6 text-red-600">
+          Dados inválidos
+        </h1>
+        <p>"articles" não é um array.</p>
+      </section>
+    );
+  }
+
+  // Convertemos "articles" para o tipo do ProductCard
+  const arrayData = articles as ProductType[];
   const totalResults = arrayData.length;
 
-  // Função para ordenar via mobile
-  const handleOrderClick = (value: string) => {
-    setOrderBy(value);
-    setShowOrderDropdown(false);
-  };
-
   /**
-   * Conteúdo do menu de filtros (aside):
-   * Disponibilidade -> Preço -> Marca
+   * Menu de filtros lateral (aside)
    */
   const FiltersAsideContent = (
     <>
@@ -336,25 +310,25 @@ export default function LojaPage() {
         >
           <div className="flex flex-col space-y-2">
             <label className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
-              <input type="checkbox" className="mr-2" /> Em Stock (10616)
+              <input type="checkbox" className="mr-2" /> Em Stock
             </label>
             <label className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
-              <input type="checkbox" className="mr-2" /> Poucas Unidades (3184)
+              <input type="checkbox" className="mr-2" /> Poucas Unidades
             </label>
             <label className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
-              <input type="checkbox" className="mr-2" /> Esgotado (2217)
+              <input type="checkbox" className="mr-2" /> Esgotado
             </label>
             <label className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
-              <input type="checkbox" className="mr-2" /> Em Liquidação (262)
+              <input type="checkbox" className="mr-2" /> Em Liquidação
             </label>
             <label className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
-              <input type="checkbox" className="mr-2" /> Pré-Reserva (807)
+              <input type="checkbox" className="mr-2" /> Pré-Reserva
             </label>
           </div>
         </div>
       </div>
 
-      {/* Faixa de Preço */}
+      {/* Preço */}
       <div className="mb-6">
         <div
           className="flex items-center justify-between mb-2 cursor-pointer"
@@ -418,26 +392,20 @@ export default function LojaPage() {
           />
           <div className="flex flex-col space-y-2 text-sm text-gray-600 dark:text-gray-400">
             <label className="flex items-center">
-              <input type="checkbox" className="mr-2" /> 1OPOS (23)
+              <input type="checkbox" className="mr-2" /> Marca X
             </label>
             <label className="flex items-center">
-              <input type="checkbox" className="mr-2" /> 2-POWER (3)
+              <input type="checkbox" className="mr-2" /> Marca Y
             </label>
             <label className="flex items-center">
-              <input type="checkbox" className="mr-2" /> 3GO (24)
-            </label>
-            <label className="flex items-center">
-              <input type="checkbox" className="mr-2" /> ADIDAS (12)
-            </label>
-            <label className="flex items-center">
-              <input type="checkbox" className="mr-2" /> AEROCOOL (6)
+              <input type="checkbox" className="mr-2" /> Marca Z
             </label>
           </div>
           <a
             href="#"
             className="text-sm text-primary dark:text-myOrange mt-2 inline-block"
           >
-            Mostrar Tudo (238)
+            Mostrar Tudo
           </a>
         </div>
       </div>
@@ -511,7 +479,6 @@ export default function LojaPage() {
         </p>
       </div>
 
-      {/* Menu lateral de filtros (Mobile) */}
       {mobileFilterOpen && (
         <>
           <div
@@ -543,11 +510,12 @@ export default function LojaPage() {
           >
             {showFilters ? "Esconder Filtros" : "Mostrar Filtros"}
           </button>
-          <p className="text-gray-600 dark:text-gray-400 whitespace-nowrap">
+
+          <p className="text-gray-600 dark:text-gray-400 whitespace-nowrap ml-4">
             {totalResults} resultado{totalResults !== 1 && "s"}.
           </p>
         </div>
-        {/* AQUI USAMOS O SELECTINPUT NO DESKTOP */}
+        {/* Ordenação (Desktop) */}
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
             Ordenar por:
@@ -568,23 +536,23 @@ export default function LojaPage() {
         </div>
       </div>
 
-      {/* Layout principal: Filtros (se visíveis) + Grid de produtos */}
+      {/* Layout principal */}
       <div
         className={`grid gap-6 transition-[grid-template-columns] duration-300 ease-in-out ${
           showFilters ? "grid-cols-1 md:grid-cols-[260px_1fr]" : "grid-cols-1"
         }`}
       >
-        {/* Filtro lateral (Desktop) */}
+        {/* Menu lateral (Desktop) */}
         {showFilters && (
           <aside className="bg-white dark:bg-gray-800 p-4 rounded shadow self-start hidden md:block">
             {FiltersAsideContent}
           </aside>
         )}
 
-        {/* Lista de produtos */}
+        {/* Lista de Produtos / Artigos */}
         <main>
           <div className="grid gap-4 xs:grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {arrayData.map((product: Product) => (
+            {arrayData.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>

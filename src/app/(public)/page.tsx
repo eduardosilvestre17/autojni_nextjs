@@ -1,13 +1,14 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { PrimaryButton, SecondaryButton } from "@/components/Buttons";
 
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-background dark:bg-dark-bg text-foreground dark:text-dark-foreground">
-      {/* HERO SECTION */}
-      <section className="relative w-full bg-gradient-to-r from-primary to-myOrange text-white py-12 px-4 md:px-8">
+      {/* HERO SECTION - menos alto */}
+      <section className="relative w-full bg-gradient-to-r from-primary to-myOrange text-white py-6 px-4 md:px-8">
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-8 items-center">
           <div>
             <h1 className="text-3xl md:text-5xl font-bold mb-4">
@@ -29,6 +30,107 @@ export default function HomePage() {
               className="mx-auto rounded-lg shadow-2xl"
             />
           </div>
+        </div>
+      </section>
+
+      {/* NAVEGAÇÃO RÁPIDA (sem background) */}
+      <section className="py-8">
+        <div className="max-w-7xl mx-auto px-4 flex flex-wrap justify-center gap-8">
+          {/* Item 1: Serviços de oficina */}
+          <Link
+            href="#"
+            className="flex flex-col items-center text-white w-[100px] md:w-[120px]"
+          >
+            <div
+              className="w-20 h-20 md:w-24 md:h-24 rounded-full border border-white 
+                         flex items-center justify-center mb-2
+                         transition-all duration-200 transform
+                         hover:rotate-12 hover:border-myOrange"
+            >
+              <Image
+                src="/images/home/servicos_oficina.jpg" // Ajuste para sua imagem na pasta public/images/home
+                alt="Serviços de oficina"
+                width={80}
+                height={80}
+                className="rounded-full"
+              />
+            </div>
+            <span className="text-center text-sm md:text-base leading-tight">
+              Serviços de oficina
+            </span>
+          </Link>
+
+          {/* Item 2: Peças em Promoção */}
+          <Link
+            href="#"
+            className="flex flex-col items-center text-white w-[100px] md:w-[120px]"
+          >
+            <div
+              className="w-20 h-20 md:w-24 md:h-24 rounded-full border border-white 
+                         flex items-center justify-center mb-2
+                         transition-all duration-200 transform
+                         hover:rotate-12 hover:border-myOrange"
+            >
+              <Image
+                src="/icon-promocao.png"
+                alt="Peças em Promoção"
+                width={80}
+                height={80}
+                className="rounded-full"
+              />
+            </div>
+            <span className="text-center text-sm md:text-base leading-tight">
+              Peças em Promoção
+            </span>
+          </Link>
+
+          {/* Item 3: Peças Novas */}
+          <Link
+            href="#"
+            className="flex flex-col items-center text-white w-[100px] md:w-[120px]"
+          >
+            <div
+              className="w-20 h-20 md:w-24 md:h-24 rounded-full border border-white 
+                         flex items-center justify-center mb-2
+                         transition-all duration-200 transform
+                         hover:rotate-12 hover:border-myOrange"
+            >
+              <Image
+                src="/icon-novas.png"
+                alt="Peças Novas"
+                width={80}
+                height={80}
+                className="rounded-full"
+              />
+            </div>
+            <span className="text-center text-sm md:text-base leading-tight">
+              Peças Novas
+            </span>
+          </Link>
+
+          {/* Item 4: Tacógrafos */}
+          <Link
+            href="#"
+            className="flex flex-col items-center text-white w-[100px] md:w-[120px]"
+          >
+            <div
+              className="w-20 h-20 md:w-24 md:h-24 rounded-full border border-white 
+                         flex items-center justify-center mb-2
+                         transition-all duration-200 transform
+                         hover:rotate-12 hover:border-myOrange"
+            >
+              <Image
+                src="/icon-tacografos.png"
+                alt="Tacógrafos"
+                width={80}
+                height={80}
+                className="rounded-full"
+              />
+            </div>
+            <span className="text-center text-sm md:text-base leading-tight">
+              Tacógrafos
+            </span>
+          </Link>
         </div>
       </section>
 
