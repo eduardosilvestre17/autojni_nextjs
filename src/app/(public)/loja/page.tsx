@@ -7,6 +7,7 @@ import ProductCard, {
   type Product as ProductType,
 } from "@/components/ProductCard";
 import { SelectInput } from "@/components/SelectInput";
+import Pagination from "@/components/Pagination";
 
 /**
  * ===========================
@@ -207,28 +208,69 @@ export default function LojaPage() {
   const [maxPrice, setMaxPrice] = useState(1000);
 
   // Ordenação
-  const [orderBy, setOrderBy] = useState("");
+  const [orderBy, setOrderBy] = useState(""); // "menor-preco", "maior-preco", "relevancia", etc.
 
-  // Lógica de busca e SWR
+  // Filtro de stock
+  const [inStock, setInStock] = useState(false);
+  const [outOfStock, setOutOfStock] = useState(false);
+
+  // Paginação
+  const limit = 20;
+  const [page, setPage] = useState(1);
+  const offset = (page - 1) * limit;
+
+  // Busca
   const sp = useSearchParams();
   const searchTerm = sp?.get("search") ?? "";
 
-  // Se quiser usar "search", implemente a lógica na rota /api/articles
-  const endpoint = searchTerm.trim()
-    ? `/api/articles?search=${encodeURIComponent(searchTerm)}`
-    : "/api/articles";
+  /**
+   * Monta a query string para /api/articles
+   * Exemplos:
+   *   ?limit=20&offset=0&orderBy=menor-preco&minPrice=10&maxPrice=500&stock=inStock,outOfStock
+   */
+  const stockFilters: string[] = [];
+  if (inStock) stockFilters.push("inStock");
+  if (outOfStock) stockFilters.push("outOfStock");
 
-  // Buscamos do /api/articles, que retorna { articles: [...], total: number }
+  const endpointParams = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+    minPrice: String(minPrice),
+    maxPrice: String(maxPrice),
+  });
+  if (searchTerm.trim()) {
+    endpointParams.set("search", searchTerm.trim());
+  }
+  if (orderBy) {
+    endpointParams.set("orderBy", orderBy);
+  }
+  if (stockFilters.length > 0) {
+    endpointParams.set("stock", stockFilters.join(",")); // ex.: "inStock,outOfStock"
+  }
+
+  const endpoint = `/api/articles?${endpointParams.toString()}`;
+
+  // SWR para buscar dados
   const { data, error, isLoading } = useSWR(endpoint, fetcher, {
     refreshInterval: 5000,
   });
 
+  // Lida com clique no menu "Ordenar"
   const handleOrderClick = (value: string) => {
     setOrderBy(value);
     setShowOrderDropdown(false);
+    setPage(1); // resetar para primeira página
   };
 
   const toggleFilters = () => setShowFilters((prev) => !prev);
+
+  // Marcamos inStock/outOfStock
+  function handleStockChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const { checked, value } = e.target;
+    if (value === "inStock") setInStock(checked);
+    if (value === "outOfStock") setOutOfStock(checked);
+    setPage(1); // volta para página 1
+  }
 
   // Erros e loading
   if (error) {
@@ -253,7 +295,7 @@ export default function LojaPage() {
     );
   }
 
-  // Verifica se data existe e contém "articles"
+  // Verifica a estrutura do retorno
   if (!data || !data.articles) {
     return (
       <section className="p-4">
@@ -265,9 +307,7 @@ export default function LojaPage() {
     );
   }
 
-  // Extrai "articles" (array) e "total" (número)
   const { articles, total } = data;
-
   if (!Array.isArray(articles)) {
     return (
       <section className="p-4">
@@ -279,12 +319,13 @@ export default function LojaPage() {
     );
   }
 
-  // Convertemos "articles" para o tipo do ProductCard
+  // Lista final de produtos
   const arrayData = articles as ProductType[];
   const totalResults = arrayData.length;
+  const totalPages = Math.ceil(total / limit);
 
   /**
-   * Menu de filtros lateral (aside)
+   * Conteúdo do Menu Lateral (Filtros)
    */
   const FiltersAsideContent = (
     <>
@@ -309,20 +350,27 @@ export default function LojaPage() {
           }`}
         >
           <div className="flex flex-col space-y-2">
+            {/* Em Stock */}
             <label className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
-              <input type="checkbox" className="mr-2" /> Em Stock
+              <input
+                type="checkbox"
+                className="mr-2"
+                value="inStock"
+                checked={inStock}
+                onChange={handleStockChange}
+              />
+              Em Stock
             </label>
+            {/* Sem Stock */}
             <label className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
-              <input type="checkbox" className="mr-2" /> Poucas Unidades
-            </label>
-            <label className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
-              <input type="checkbox" className="mr-2" /> Esgotado
-            </label>
-            <label className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
-              <input type="checkbox" className="mr-2" /> Em Liquidação
-            </label>
-            <label className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
-              <input type="checkbox" className="mr-2" /> Pré-Reserva
+              <input
+                type="checkbox"
+                className="mr-2"
+                value="outOfStock"
+                checked={outOfStock}
+                onChange={handleStockChange}
+              />
+              Sem Stock
             </label>
           </div>
         </div>
@@ -358,6 +406,7 @@ export default function LojaPage() {
             onChange={(newMin, newMax) => {
               setMinPrice(newMin);
               setMaxPrice(newMax);
+              setPage(1); // se mudar a faixa de preço, voltamos à página 1
             }}
             minLimit={0}
             maxLimit={1000}
@@ -365,7 +414,7 @@ export default function LojaPage() {
         </div>
       </div>
 
-      {/* Marca */}
+      {/* Marca (Exemplo, mas não implementamos no back-end agora) */}
       <div className="mb-6">
         <div
           className="flex items-center justify-between mb-2 cursor-pointer"
@@ -401,16 +450,15 @@ export default function LojaPage() {
               <input type="checkbox" className="mr-2" /> Marca Z
             </label>
           </div>
-          <a
-            href="#"
-            className="text-sm text-primary dark:text-myOrange mt-2 inline-block"
-          >
-            Mostrar Tudo
-          </a>
         </div>
       </div>
     </>
   );
+
+  // Paginação: ao mudar de página, chama setPage
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+  };
 
   return (
     <section className="p-4">
@@ -529,7 +577,10 @@ export default function LojaPage() {
                 { label: "Mais Recentes", value: "mais-recentes" },
               ]}
               value={orderBy}
-              onChange={(val) => setOrderBy(val)}
+              onChange={(val) => {
+                setOrderBy(val);
+                setPage(1); // Reseta para página 1 ao mudar a ordenação
+              }}
               placeholder="Selecione..."
             />
           </div>
@@ -555,6 +606,16 @@ export default function LojaPage() {
             {arrayData.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
+          </div>
+
+          {/* Paginação */}
+          <div className="mt-6">
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              maxDelta={2}
+            />
           </div>
         </main>
       </div>
