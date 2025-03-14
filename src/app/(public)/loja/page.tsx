@@ -274,8 +274,8 @@ export default function LojaPage() {
 
   // Erros e loading
   if (error) {
-    return (
-      <section className="p-4">
+  return (
+    <section className="p-4 overflow-x-hidden">
         <h1 className="text-2xl font-bold mb-6 text-red-600">
           Erro ao carregar a loja
         </h1>
@@ -286,7 +286,7 @@ export default function LojaPage() {
 
   if (isLoading) {
     return (
-      <section className="p-4">
+      <section className="p-4 overflow-x-hidden">
         <h1 className="text-2xl font-bold mb-6 text-foreground dark:text-dark-foreground">
           Loja
         </h1>
@@ -298,7 +298,7 @@ export default function LojaPage() {
   // Verifica a estrutura do retorno
   if (!data || !data.articles) {
     return (
-      <section className="p-4">
+      <section className="p-4 overflow-x-hidden">
         <h1 className="text-2xl font-bold mb-6 text-red-600">
           Dados inválidos
         </h1>
@@ -310,7 +310,7 @@ export default function LojaPage() {
   const { articles, total } = data;
   if (!Array.isArray(articles)) {
     return (
-      <section className="p-4">
+      <section className="p-4 overflow-x-hidden">
         <h1 className="text-2xl font-bold mb-6 text-red-600">
           Dados inválidos
         </h1>
@@ -461,7 +461,7 @@ export default function LojaPage() {
   };
 
   return (
-    <section className="p-4">
+    <section className="p-4 overflow-x-hidden">
       {/* Filtros e Ordenação (Mobile) */}
       <div className="md:hidden mb-4 flex flex-col gap-2 w-full">
         <div className="flex gap-2 w-full">
